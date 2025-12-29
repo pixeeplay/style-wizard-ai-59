@@ -1,7 +1,7 @@
 project_id = "luvvnwclzxhsxifzvusd"
 
 [functions.analyze-clothing]
-verify_jwt = true
+verify_jwt = false
 
 [functions.virtual-tryon]
 verify_jwt = true
