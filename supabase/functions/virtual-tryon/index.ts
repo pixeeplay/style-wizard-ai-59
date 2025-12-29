@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { userAvatarUrl, topImageUrl, bottomImageUrl, userDescription, visualizationStyle } = await req.json();
+    const { userAvatarUrl, topImageUrl, bottomImageUrl, userDescription, visualizationStyle, includeAccessories } = await req.json();
     
     if (!topImageUrl || !bottomImageUrl) {
       return new Response(
@@ -29,27 +29,30 @@ serve(async (req) => {
       );
     }
 
-    console.log("Generating virtual try-on image with style:", visualizationStyle || "mannequin");
+    console.log("Generating virtual try-on image with style:", visualizationStyle || "mannequin", "accessories:", includeAccessories);
 
-    // Define style-specific prompts - ONLY show provided items, no added accessories
+    // Accessory recommendation text
+    const accessoryText = includeAccessories 
+      ? `
+IMPORTANT: Also ADD stylish accessories that complement this outfit:
+- Shoes that match the style
+- A watch or bracelet
+- A belt if appropriate
+- Sunglasses or jewelry if it fits the look
+These accessories should enhance the overall outfit.`
+      : `
+CRITICAL: Do NOT add any accessories, shoes, watches, belts, or jewelry. Show ONLY the two clothing items provided.`;
+
+    // Define style-specific prompts
     const stylePrompts: Record<string, string> = {
-      flatlay: `Generate a flat lay fashion photo with ONLY these two clothing items:
-- A top garment laid flat
-- A bottom garment laid flat
-
-Style: Top-down view on clean marble or wood surface. Professional lighting. No accessories, no shoes, no watches, no jewelry - ONLY the two clothing items provided. Instagram aesthetic.`,
+      flatlay: `Generate a flat lay fashion photo.
+Style: Top-down view on clean marble or wood surface. Professional lighting. Instagram aesthetic.`,
       
-      mannequin: `Generate a fashion photo showing ONLY these two clothing items on a simple mannequin form:
-- The top garment
-- The bottom garment
-
-Style: Clean studio background, professional lighting. Do NOT add any accessories, shoes, watches, belts or jewelry. Show ONLY the exact two items provided.`,
+      mannequin: `Generate a fashion photo showing these clothing items on a simple mannequin form.
+Style: Clean studio background, professional lighting.`,
       
-      editorial: `Generate an editorial fashion photo featuring ONLY these two clothing items:
-- One top
-- One bottom
-
-Style: Magazine quality, artistic lighting. Do NOT add any accessories like watches, belts, jewelry or shoes. Show ONLY the two clothing items, nothing else.`,
+      editorial: `Generate an editorial fashion photo.
+Style: Magazine quality, artistic lighting.`,
     };
 
     const selectedStyle = visualizationStyle || "mannequin";
@@ -57,12 +60,11 @@ Style: Magazine quality, artistic lighting. Do NOT add any accessories like watc
 
     const prompt = `${basePrompt}
 
-CRITICAL INSTRUCTIONS:
+INSTRUCTIONS:
 - Use the FIRST image as reference for the TOP clothing item
 - Use the SECOND image as reference for the BOTTOM clothing item
 - Recreate these exact items in the generated image
-- Do NOT add any accessories, shoes, watches, belts, or jewelry
-- Show ONLY these two clothing items together
+${accessoryText}
 
 ${userDescription ? `User note: ${userDescription}` : ''}`;
 
