@@ -9,6 +9,8 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useProfile } from '@/hooks/useProfile';
 import { 
@@ -34,7 +36,7 @@ export default function Index() {
   const { items, toggleLaundry, loading } = useWardrobe();
   const { toast } = useToast();
   const { t, language, setLanguage } = useTranslation();
-  const { theme, setTheme } = useSeasonalTheme();
+  const { theme, manualTheme, autoTheme, suggestedTheme, setTheme, setAutoTheme } = useSeasonalTheme();
   const [activeTab, setActiveTab] = useState<Tab>('wardrobe');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -229,10 +231,35 @@ export default function Index() {
             </Card>
 
             {/* Theme selector */}
-            <Card className="p-4 space-y-3">
+            <Card className="p-4 space-y-4">
               <p className="font-semibold">{language === 'fr' ? 'Thème' : 'Theme'}</p>
-              <Select value={theme} onValueChange={(v) => setTheme(v as any)}>
-                <SelectTrigger>
+              
+              {/* Auto theme toggle */}
+              <div className="flex items-center justify-between rounded-lg border border-border p-3 bg-muted/30">
+                <div className="space-y-0.5">
+                  <Label htmlFor="auto-theme" className="text-sm font-medium cursor-pointer">
+                    {language === 'fr' ? 'Thème automatique' : 'Auto theme'}
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {language === 'fr' 
+                      ? `Suggestion : ${seasonalThemes.find(x => x.key === suggestedTheme)?.labelFr || 'Par défaut'}`
+                      : `Suggested: ${seasonalThemes.find(x => x.key === suggestedTheme)?.labelEn || 'Default'}`}
+                  </p>
+                </div>
+                <Switch
+                  id="auto-theme"
+                  checked={autoTheme}
+                  onCheckedChange={setAutoTheme}
+                />
+              </div>
+
+              {/* Manual selector (disabled when auto is on) */}
+              <Select 
+                value={manualTheme} 
+                onValueChange={(v) => setTheme(v as any)}
+                disabled={autoTheme}
+              >
+                <SelectTrigger className={autoTheme ? 'opacity-50' : ''}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
