@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { userAvatarUrl, topImageUrl, bottomImageUrl, userDescription } = await req.json();
+    const { userAvatarUrl, topImageUrl, bottomImageUrl, userDescription, visualizationStyle } = await req.json();
     
     if (!topImageUrl || !bottomImageUrl) {
       return new Response(
@@ -29,23 +29,52 @@ serve(async (req) => {
       );
     }
 
-    console.log("Generating virtual try-on image...");
+    console.log("Generating virtual try-on image with style:", visualizationStyle || "mannequin");
 
-    // Build the prompt for image generation
-    const prompt = `Create a fashion lookbook photo showing a stylish outfit presentation. 
-    
+    // Define style-specific prompts
+    const stylePrompts: Record<string, string> = {
+      flatlay: `Create a beautiful flat lay fashion photography of an outfit.
+        
+Layout style:
+- Top-down view of clothes laid flat on a clean, elegant surface
+- Soft marble, wooden, or fabric background in neutral tones
+- Clothes arranged artistically with natural-looking folds
+- Include subtle styling props like a watch, sunglasses, or jewelry nearby
+- Professional product photography lighting with soft shadows
+- Instagram-worthy aesthetic, aspirational and luxurious`,
+      
+      mannequin: `Create a fashion lookbook photo showing a stylish outfit on an elegant mannequin.
+        
+Style details:
+- Modern, sleek mannequin silhouette (torso form or full body)
+- Clean, minimalist studio background (soft gradient or solid neutral)
+- Professional fashion photography lighting
+- Clothes should drape naturally and look premium
+- High-end boutique or showroom aesthetic`,
+      
+      editorial: `Create a high-fashion editorial photograph featuring this outfit.
+        
+Style details:
+- Dynamic fashion model pose (can show partial figure or artistic crop)
+- Magazine-quality editorial aesthetic
+- Dramatic or artistic lighting (studio or urban setting)
+- Contemporary fashion photography style
+- Vogue or Elle magazine inspired composition
+- Focus on the outfit while maintaining artistic flair`,
+    };
+
+    const selectedStyle = visualizationStyle || "mannequin";
+    const basePrompt = stylePrompts[selectedStyle] || stylePrompts.mannequin;
+
+    const prompt = `${basePrompt}
+
 The outfit consists of:
-- TOP: A clothing item shown in the first reference image
-- BOTTOM: A clothing item shown in the second reference image
+- TOP: The clothing item shown in the first reference image
+- BOTTOM: The clothing item shown in the second reference image
 
-Style the image as a modern fashion editorial with:
-- Clean, minimalist background (soft neutral tone)
-- Professional fashion photography aesthetic
-- The clothes should be arranged/styled elegantly together
-- Show the complete outfit combination clearly
-${userDescription ? `- The person wearing should have these characteristics: ${userDescription}` : '- Show on a neutral fashion mannequin or elegant flat lay presentation'}
+${userDescription ? `Additional context: ${userDescription}` : ''}
 
-Make it look like a high-end fashion app recommendation. Ultra high resolution, professional lighting.`;
+IMPORTANT: Show both clothing items together as a complete outfit combination. Ultra high resolution, professional quality.`;
 
     const messageContent: any[] = [
       { type: "text", text: prompt },
