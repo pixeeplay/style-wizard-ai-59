@@ -31,36 +31,25 @@ serve(async (req) => {
 
     console.log("Generating virtual try-on image with style:", visualizationStyle || "mannequin");
 
-    // Define style-specific prompts
+    // Define style-specific prompts - ONLY show provided items, no added accessories
     const stylePrompts: Record<string, string> = {
-      flatlay: `Create a beautiful flat lay fashion photography of an outfit.
-        
-Layout style:
-- Top-down view of clothes laid flat on a clean, elegant surface
-- Soft marble, wooden, or fabric background in neutral tones
-- Clothes arranged artistically with natural-looking folds
-- Include subtle styling props like a watch, sunglasses, or jewelry nearby
-- Professional product photography lighting with soft shadows
-- Instagram-worthy aesthetic, aspirational and luxurious`,
+      flatlay: `Generate a flat lay fashion photo with ONLY these two clothing items:
+- A top garment laid flat
+- A bottom garment laid flat
+
+Style: Top-down view on clean marble or wood surface. Professional lighting. No accessories, no shoes, no watches, no jewelry - ONLY the two clothing items provided. Instagram aesthetic.`,
       
-      mannequin: `Create a fashion lookbook photo showing a stylish outfit on an elegant mannequin.
-        
-Style details:
-- Modern, sleek mannequin silhouette (torso form or full body)
-- Clean, minimalist studio background (soft gradient or solid neutral)
-- Professional fashion photography lighting
-- Clothes should drape naturally and look premium
-- High-end boutique or showroom aesthetic`,
+      mannequin: `Generate a fashion photo showing ONLY these two clothing items on a simple mannequin form:
+- The top garment
+- The bottom garment
+
+Style: Clean studio background, professional lighting. Do NOT add any accessories, shoes, watches, belts or jewelry. Show ONLY the exact two items provided.`,
       
-      editorial: `Create a high-fashion editorial photograph featuring this outfit.
-        
-Style details:
-- Dynamic fashion model pose (can show partial figure or artistic crop)
-- Magazine-quality editorial aesthetic
-- Dramatic or artistic lighting (studio or urban setting)
-- Contemporary fashion photography style
-- Vogue or Elle magazine inspired composition
-- Focus on the outfit while maintaining artistic flair`,
+      editorial: `Generate an editorial fashion photo featuring ONLY these two clothing items:
+- One top
+- One bottom
+
+Style: Magazine quality, artistic lighting. Do NOT add any accessories like watches, belts, jewelry or shoes. Show ONLY the two clothing items, nothing else.`,
     };
 
     const selectedStyle = visualizationStyle || "mannequin";
@@ -68,13 +57,14 @@ Style details:
 
     const prompt = `${basePrompt}
 
-The outfit consists of:
-- TOP: The clothing item shown in the first reference image
-- BOTTOM: The clothing item shown in the second reference image
+CRITICAL INSTRUCTIONS:
+- Use the FIRST image as reference for the TOP clothing item
+- Use the SECOND image as reference for the BOTTOM clothing item
+- Recreate these exact items in the generated image
+- Do NOT add any accessories, shoes, watches, belts, or jewelry
+- Show ONLY these two clothing items together
 
-${userDescription ? `Additional context: ${userDescription}` : ''}
-
-IMPORTANT: Show both clothing items together as a complete outfit combination. Ultra high resolution, professional quality.`;
+${userDescription ? `User note: ${userDescription}` : ''}`;
 
     const messageContent: any[] = [
       { type: "text", text: prompt },
