@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { useWardrobe, WardrobeItem } from '@/hooks/useWardrobe';
 import { useProfile } from '@/hooks/useProfile';
+import { useOutfits } from '@/hooks/useOutfits';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Sparkles, RefreshCw, Heart, Shirt, AlertCircle, Wand2, Loader2, Download, LayoutGrid, User, Camera } from 'lucide-react';
+import { Sparkles, RefreshCw, Heart, Shirt, AlertCircle, Wand2, Loader2, Download, LayoutGrid, User, Camera, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import OutfitGallery from './OutfitGallery';
 
 type VisualizationStyle = 'flatlay' | 'mannequin' | 'editorial';
 // Color harmony rules
@@ -52,6 +54,7 @@ function areColorsCompatible(color1: string, color2: string): boolean {
 export default function StylistView() {
   const { availableItems } = useWardrobe();
   const { profile } = useProfile();
+  const { saveOutfit } = useOutfits();
   const { toast } = useToast();
   const [outfit, setOutfit] = useState<{ top: WardrobeItem | null; bottom: WardrobeItem | null }>({
     top: null,
@@ -62,6 +65,8 @@ export default function StylistView() {
   const [tryOnImage, setTryOnImage] = useState<string | null>(null);
   const [tryOnDialogOpen, setTryOnDialogOpen] = useState(false);
   const [visualizationStyle, setVisualizationStyle] = useState<VisualizationStyle>('mannequin');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   const tops = availableItems.filter(item => 
     ['top', 'dress', 'outerwear'].includes(item.category)
@@ -82,6 +87,7 @@ export default function StylistView() {
 
     setGenerating(true);
     setTryOnImage(null);
+    setSaved(false);
 
     setTimeout(() => {
       let attempts = 0;
@@ -153,6 +159,23 @@ export default function StylistView() {
       setTryOnDialogOpen(false);
     } finally {
       setGeneratingTryOn(false);
+    }
+  };
+
+  const handleSaveOutfit = async () => {
+    if (!outfit.top || !outfit.bottom) return;
+    
+    setSaving(true);
+    const items = [outfit.top.id, outfit.bottom.id];
+    const result = await saveOutfit(items, tryOnImage, visualizationStyle);
+    setSaving(false);
+    
+    if (result) {
+      setSaved(true);
+      toast({
+        title: 'Look sauvegardé !',
+        description: 'Retrouvez-le dans vos favoris',
+      });
     }
   };
 
@@ -236,9 +259,20 @@ export default function StylistView() {
               <RefreshCw className={`w-4 h-4 mr-2 ${generating ? 'animate-spin' : ''}`} />
               Autre look
             </Button>
-            <Button className="flex-1" variant="secondary">
-              <Heart className="w-4 h-4 mr-2" />
-              Sauvegarder
+            <Button 
+              className="flex-1" 
+              variant={saved ? "secondary" : "default"}
+              onClick={handleSaveOutfit}
+              disabled={saving || saved}
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : saved ? (
+                <Check className="w-4 h-4 mr-2" />
+              ) : (
+                <Heart className="w-4 h-4 mr-2" />
+              )}
+              {saved ? 'Sauvegardé' : 'Sauvegarder'}
             </Button>
           </div>
         </div>
@@ -282,6 +316,9 @@ export default function StylistView() {
           <p className="text-sm text-muted-foreground">Bas disponibles</p>
         </Card>
       </div>
+
+      {/* Saved Outfits Gallery */}
+      <OutfitGallery />
 
       {!outfit.top && !outfit.bottom && availableItems.length > 0 && (
         <Button 
