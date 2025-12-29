@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
@@ -18,13 +18,45 @@ export interface Outfit {
   created_at: string;
 }
 
+type CreateOutfitInput = {
+  items: string[];
+  visualizationStyle: string;
+  name?: string;
+  isFavorite?: boolean;
+  tryOnImageBase64?: string | null;
+};
+
+async function uploadTryOnImage({
+  userId,
+  tryOnImageBase64,
+}: {
+  userId: string;
+  tryOnImageBase64: string;
+}): Promise<string> {
+  const base64Data = tryOnImageBase64.replace(/^data:image\/\w+;base64,/, '');
+  const bytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+  const fileName = `${userId}/${Date.now()}.png`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('tryon-images')
+    .upload(fileName, bytes, {
+      contentType: 'image/png',
+      upsert: false,
+    });
+
+  if (uploadError) throw uploadError;
+
+  const { data: urlData } = supabase.storage.from('tryon-images').getPublicUrl(fileName);
+  return urlData.publicUrl;
+}
+
 export function useOutfits() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [outfits, setOutfits] = useState<Outfit[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchOutfits = async () => {
+  const fetchOutfits = useCallback(async () => {
     if (!user) {
       setOutfits([]);
       setLoading(false);
@@ -45,116 +77,106 @@ export function useOutfits() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchOutfits();
-  }, [user]);
+  }, [fetchOutfits]);
 
-  const saveOutfit = async (
-    items: string[],
-    tryOnImageBase64: string | null,
-    visualizationStyle: string,
-    name?: string
-  ): Promise<Outfit | null> => {
-    if (!user) return null;
+  const createOutfit = useCallback(
+    async ({ items, visualizationStyle, name, isFavorite, tryOnImageBase64 }: CreateOutfitInput): Promise<Outfit | null> => {
+      if (!user) return null;
 
-    try {
-      let tryOnImageUrl: string | null = null;
+      try {
+        let tryOnImageUrl: string | null = null;
 
-      // Upload try-on image if provided
-      if (tryOnImageBase64) {
-        const base64Data = tryOnImageBase64.replace(/^data:image\/\w+;base64,/, '');
-        const bytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
-        const fileName = `${user.id}/${Date.now()}.png`;
+        if (tryOnImageBase64) {
+          tryOnImageUrl = await uploadTryOnImage({ userId: user.id, tryOnImageBase64 });
+        }
 
-        const { error: uploadError } = await supabase.storage
-          .from('tryon-images')
-          .upload(fileName, bytes, {
-            contentType: 'image/png',
-            upsert: false,
-          });
+        const { data, error } = await supabase
+          .from('outfits')
+          .insert({
+            user_id: user.id,
+            items,
+            name: name || `Look ${new Date().toLocaleDateString('en-US')}`,
+            try_on_image_url: tryOnImageUrl,
+            visualization_style: visualizationStyle,
+            is_favorite: Boolean(isFavorite),
+          })
+          .select()
+          .single();
 
-        if (uploadError) throw uploadError;
+        if (error) throw error;
 
-        const { data: urlData } = supabase.storage
-          .from('tryon-images')
-          .getPublicUrl(fileName);
-        
-        tryOnImageUrl = urlData.publicUrl;
+        setOutfits((prev) => [data as Outfit, ...prev]);
+        return data as Outfit;
+      } catch (error) {
+        console.error('Error creating outfit:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Unable to save the look',
+        });
+        return null;
       }
+    },
+    [toast, user]
+  );
 
-      const { data, error } = await supabase
-        .from('outfits')
-        .insert({
-          user_id: user.id,
-          items,
-          name: name || `Look ${new Date().toLocaleDateString('fr-FR')}`,
-          try_on_image_url: tryOnImageUrl,
-          visualization_style: visualizationStyle,
-          is_favorite: true,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setOutfits(prev => [data as Outfit, ...prev]);
-      return data as Outfit;
-    } catch (error) {
-      console.error('Error saving outfit:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erreur',
-        description: 'Impossible de sauvegarder le look',
+  // Backwards compatible helper for the current UI (Save button)
+  const saveOutfit = useCallback(
+    async (items: string[], tryOnImageBase64: string | null, visualizationStyle: string, name?: string) => {
+      return createOutfit({
+        items,
+        visualizationStyle,
+        name,
+        isFavorite: true,
+        tryOnImageBase64,
       });
-      return null;
-    }
-  };
+    },
+    [createOutfit]
+  );
 
-  const toggleFavorite = async (outfitId: string) => {
-    const outfit = outfits.find(o => o.id === outfitId);
-    if (!outfit) return;
+  const toggleFavorite = useCallback(
+    async (outfitId: string) => {
+      const outfit = outfits.find((o) => o.id === outfitId);
+      if (!outfit) return;
 
+      try {
+        const { error } = await supabase
+          .from('outfits')
+          .update({ is_favorite: !outfit.is_favorite })
+          .eq('id', outfitId);
+
+        if (error) throw error;
+
+        setOutfits((prev) => prev.map((o) => (o.id === outfitId ? { ...o, is_favorite: !o.is_favorite } : o)));
+      } catch (error) {
+        console.error('Error toggling favorite:', error);
+      }
+    },
+    [outfits]
+  );
+
+  const deleteOutfit = useCallback(async (outfitId: string) => {
     try {
-      const { error } = await supabase
-        .from('outfits')
-        .update({ is_favorite: !outfit.is_favorite })
-        .eq('id', outfitId);
-
+      const { error } = await supabase.from('outfits').delete().eq('id', outfitId);
       if (error) throw error;
 
-      setOutfits(prev =>
-        prev.map(o =>
-          o.id === outfitId ? { ...o, is_favorite: !o.is_favorite } : o
-        )
-      );
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-    }
-  };
-
-  const deleteOutfit = async (outfitId: string) => {
-    try {
-      const { error } = await supabase
-        .from('outfits')
-        .delete()
-        .eq('id', outfitId);
-
-      if (error) throw error;
-
-      setOutfits(prev => prev.filter(o => o.id !== outfitId));
+      setOutfits((prev) => prev.filter((o) => o.id !== outfitId));
     } catch (error) {
       console.error('Error deleting outfit:', error);
     }
-  };
+  }, []);
 
-  const favoriteOutfits = outfits.filter(o => o.is_favorite);
+  const favoriteOutfits = useMemo(() => outfits.filter((o) => o.is_favorite), [outfits]);
 
   return {
     outfits,
     favoriteOutfits,
     loading,
+    createOutfit,
     saveOutfit,
     toggleFavorite,
     deleteOutfit,
