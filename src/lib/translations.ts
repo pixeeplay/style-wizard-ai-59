@@ -162,6 +162,19 @@ export const translations = {
     includeAccessories: 'Add AI accessories',
     accessoriesOn: 'AI will add shoes, watch, belt and other recommended accessories',
     accessoriesOff: 'Only clothes from your wardrobe will be displayed',
+    // Smart look
+    smartLook: 'Look from my mood',
+    smartLookSubtitle: 'Describe your mood and let AI create the perfect look',
+    yourMood: 'Your mood / desire',
+    moodPlaceholder: 'e.g. I want a casual look for coffee with friends',
+    currentWeather: 'Current weather',
+    fetchingWeather: 'Fetching weather...',
+    weatherError: 'Weather unavailable',
+    generateSmartLook: 'Generate my personalized look',
+    smartLookGenerated: 'Personalized look generated!',
+    basedOnMood: 'Based on your mood and the weather',
+    enterCity: 'Enter your city',
+    cityPlaceholder: 'Paris, London, New York...',
   },
 
   // Outfit history

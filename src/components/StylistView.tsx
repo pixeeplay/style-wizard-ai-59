@@ -8,9 +8,11 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Sparkles, RefreshCw, Heart, Shirt, AlertCircle, Wand2, Loader2, Download, LayoutGrid, User, Camera, Check, Watch } from 'lucide-react';
+import { Sparkles, RefreshCw, Heart, Shirt, AlertCircle, Wand2, Loader2, Download, LayoutGrid, User, Camera, Check, Watch, Cloud, MapPin, Brain } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import OutfitGallery from './OutfitGallery';
@@ -84,6 +86,14 @@ export default function StylistView() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // Smart look state
+  const [smartMode, setSmartMode] = useState(false);
+  const [moodPrompt, setMoodPrompt] = useState('');
+  const [city, setCity] = useState(() => localStorage.getItem('smartstyle.city') || '');
+  const [weather, setWeather] = useState<{ avgTemp: number; conditions: string[]; recommendation: string } | null>(null);
+  const [fetchingWeather, setFetchingWeather] = useState(false);
+  const [generatingSmart, setGeneratingSmart] = useState(false);
+
   useEffect(() => {
     localStorage.setItem('smartstyle.visualizationStyle', visualizationStyle);
   }, [visualizationStyle]);
@@ -91,6 +101,36 @@ export default function StylistView() {
   useEffect(() => {
     localStorage.setItem('smartstyle.includeAccessories', String(includeAccessories));
   }, [includeAccessories]);
+
+  useEffect(() => {
+    if (city) localStorage.setItem('smartstyle.city', city);
+  }, [city]);
+
+  // Fetch weather when city changes
+  useEffect(() => {
+    if (!city || city.length < 2) {
+      setWeather(null);
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      setFetchingWeather(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('get-weather', {
+          body: { destination: city, departureDate: new Date().toISOString(), days: 1 },
+        });
+        if (error) throw error;
+        if (data?.weather) {
+          setWeather(data.weather);
+        }
+      } catch (err) {
+        console.error('Weather fetch error:', err);
+        setWeather(null);
+      } finally {
+        setFetchingWeather(false);
+      }
+    }, 600);
+    return () => clearTimeout(timeout);
+  }, [city]);
 
   const handleReplayOutfit = (top: WardrobeItem, bottom: WardrobeItem) => {
     setOutfit({ top, bottom });
@@ -108,6 +148,61 @@ export default function StylistView() {
   const bottoms = availableItems.filter(item => 
     ['bottom', 'dress'].includes(item.category)
   );
+
+  // Generate smart look via AI
+  const generateSmartLook = async () => {
+    if (tops.length === 0 || bottoms.length === 0) {
+      toast({ variant: 'destructive', title: t.stylist.notEnoughItems, description: t.stylist.addTopsAndBottoms });
+      return;
+    }
+
+    setGeneratingSmart(true);
+    setTryOnImage(null);
+    setSaved(false);
+
+    try {
+      const wardrobeItems = availableItems.map(i => ({
+        id: i.id,
+        category: i.category,
+        color: i.color,
+        style: i.style,
+        season: i.season,
+        name: i.name,
+      }));
+
+      const { data, error } = await supabase.functions.invoke('generate-smart-look', {
+        body: { prompt: moodPrompt, weather, wardrobeItems },
+      });
+
+      if (error) throw error;
+
+      const selectedTop = availableItems.find(i => i.id === data.topId);
+      const selectedBottom = availableItems.find(i => i.id === data.bottomId);
+
+      if (selectedTop && selectedBottom) {
+        setOutfit({ top: selectedTop, bottom: selectedBottom });
+
+        await createOutfit({
+          items: [selectedTop.id, selectedBottom.id],
+          visualizationStyle,
+          isFavorite: false,
+          name: `Smart Look ${new Date().toLocaleDateString()}`,
+        });
+
+        toast({
+          title: t.stylist.smartLookGenerated,
+          description: data.reasoning || t.stylist.basedOnMood,
+        });
+      } else {
+        throw new Error('Invalid item IDs returned');
+      }
+    } catch (err) {
+      console.error('Smart look error:', err);
+      toast({ variant: 'destructive', title: t.stylist.generationError, description: err instanceof Error ? err.message : 'Unknown error' });
+    } finally {
+      setGeneratingSmart(false);
+    }
+  };
 
   const generateOutfit = () => {
     if (tops.length === 0 || bottoms.length === 0) {
@@ -228,6 +323,67 @@ export default function StylistView() {
         <h2 className="text-xl font-bold">{t.stylist.title}</h2>
         <p className="text-sm text-muted-foreground">{t.stylist.subtitle}</p>
       </div>
+
+      {/* Mode toggle: Random vs Smart */}
+      <div className="flex gap-2">
+        <Button
+          variant={!smartMode ? 'default' : 'outline'}
+          className="flex-1"
+          onClick={() => setSmartMode(false)}
+        >
+          <Sparkles className="w-4 h-4 mr-2" />
+          {t.stylist.generateLook}
+        </Button>
+        <Button
+          variant={smartMode ? 'default' : 'outline'}
+          className="flex-1"
+          onClick={() => setSmartMode(true)}
+        >
+          <Brain className="w-4 h-4 mr-2" />
+          {t.stylist.smartLook}
+        </Button>
+      </div>
+
+      {/* Smart look form */}
+      {smartMode && (
+        <Card className="p-4 space-y-4">
+          <div className="space-y-2">
+            <Label>{t.stylist.enterCity}</Label>
+            <div className="flex gap-2">
+              <MapPin className="w-4 h-4 mt-3 text-muted-foreground" />
+              <Input
+                placeholder={t.stylist.cityPlaceholder}
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+              />
+            </div>
+            {fetchingWeather && <p className="text-xs text-muted-foreground">{t.stylist.fetchingWeather}</p>}
+            {weather && (
+              <div className="flex items-center gap-2 text-sm">
+                <Cloud className="w-4 h-4 text-primary" />
+                <span>{weather.avgTemp}°C - {weather.conditions.join(', ')}</span>
+              </div>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label>{t.stylist.yourMood}</Label>
+            <Textarea
+              placeholder={t.stylist.moodPlaceholder}
+              value={moodPrompt}
+              onChange={(e) => setMoodPrompt(e.target.value)}
+              rows={2}
+            />
+          </div>
+          <Button
+            onClick={generateSmartLook}
+            disabled={generatingSmart || tops.length === 0 || bottoms.length === 0}
+            className="w-full gold-gradient text-primary-foreground"
+          >
+            {generatingSmart ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Brain className="w-4 h-4 mr-2" />}
+            {generatingSmart ? t.stylist.generating : t.stylist.generateSmartLook}
+          </Button>
+        </Card>
+      )}
 
       {/* Generated Outfit */}
       {(outfit.top || outfit.bottom) ? (
