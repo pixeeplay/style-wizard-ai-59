@@ -24,7 +24,9 @@ export type Database = {
           name: string | null
           occasion: string | null
           season: Database["public"]["Enums"]["season"] | null
+          try_on_image_url: string | null
           user_id: string
+          visualization_style: string | null
           wear_count: number | null
         }
         Insert: {
@@ -36,7 +38,9 @@ export type Database = {
           name?: string | null
           occasion?: string | null
           season?: Database["public"]["Enums"]["season"] | null
+          try_on_image_url?: string | null
           user_id: string
+          visualization_style?: string | null
           wear_count?: number | null
         }
         Update: {
@@ -48,7 +52,9 @@ export type Database = {
           name?: string | null
           occasion?: string | null
           season?: Database["public"]["Enums"]["season"] | null
+          try_on_image_url?: string | null
           user_id?: string
+          visualization_style?: string | null
           wear_count?: number | null
         }
         Relationships: []
