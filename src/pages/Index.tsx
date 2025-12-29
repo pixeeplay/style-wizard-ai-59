@@ -2,10 +2,13 @@ import { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useWardrobe } from '@/hooks/useWardrobe';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useSeasonalTheme } from '@/hooks/useSeasonalTheme';
+import { seasonalThemes } from '@/lib/seasonal-themes';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useProfile } from '@/hooks/useProfile';
 import { 
@@ -31,6 +34,7 @@ export default function Index() {
   const { items, toggleLaundry, loading } = useWardrobe();
   const { toast } = useToast();
   const { t } = useTranslation();
+  const { theme, setTheme } = useSeasonalTheme();
   const [activeTab, setActiveTab] = useState<Tab>('wardrobe');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -209,6 +213,26 @@ export default function Index() {
               <h2 className="text-xl font-bold mt-4">{profile?.full_name || user?.email}</h2>
               <p className="text-muted-foreground">{user?.email}</p>
             </div>
+
+            <Card className="p-4 space-y-3">
+              <p className="font-semibold">Theme</p>
+              <Select value={theme} onValueChange={(v) => setTheme(v as any)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {seasonalThemes.map((opt) => (
+                    <SelectItem key={opt.key} value={opt.key}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {seasonalThemes.find((x) => x.key === theme)?.description}
+              </p>
+            </Card>
+
             <Button variant="outline" className="w-full" onClick={signOut}>
               <LogOut className="w-4 h-4 mr-2" /> {t.common.logout}
             </Button>

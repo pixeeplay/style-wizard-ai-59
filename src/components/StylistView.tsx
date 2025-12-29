@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useWardrobe, WardrobeItem } from '@/hooks/useWardrobe';
 import { useProfile } from '@/hooks/useProfile';
 import { useOutfits } from '@/hooks/useOutfits';
@@ -58,9 +58,10 @@ function areColorsCompatible(color1: string, color2: string): boolean {
 export default function StylistView() {
   const { availableItems } = useWardrobe();
   const { profile } = useProfile();
-  const { saveOutfit } = useOutfits();
+  const { saveOutfit, createOutfit } = useOutfits();
   const { toast } = useToast();
   const { t } = useTranslation();
+
   const [outfit, setOutfit] = useState<{ top: WardrobeItem | null; bottom: WardrobeItem | null }>({
     top: null,
     bottom: null,
@@ -69,10 +70,27 @@ export default function StylistView() {
   const [generatingTryOn, setGeneratingTryOn] = useState(false);
   const [tryOnImage, setTryOnImage] = useState<string | null>(null);
   const [tryOnDialogOpen, setTryOnDialogOpen] = useState(false);
-  const [visualizationStyle, setVisualizationStyle] = useState<VisualizationStyle>('mannequin');
-  const [includeAccessories, setIncludeAccessories] = useState(true);
+
+  // Persisted UI preferences
+  const [visualizationStyle, setVisualizationStyle] = useState<VisualizationStyle>(() => {
+    const v = localStorage.getItem('smartstyle.visualizationStyle') as VisualizationStyle | null;
+    return v || 'mannequin';
+  });
+  const [includeAccessories, setIncludeAccessories] = useState<boolean>(() => {
+    const v = localStorage.getItem('smartstyle.includeAccessories');
+    return v ? v === 'true' : true;
+  });
+
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('smartstyle.visualizationStyle', visualizationStyle);
+  }, [visualizationStyle]);
+
+  useEffect(() => {
+    localStorage.setItem('smartstyle.includeAccessories', String(includeAccessories));
+  }, [includeAccessories]);
 
   const handleReplayOutfit = (top: WardrobeItem, bottom: WardrobeItem) => {
     setOutfit({ top, bottom });
@@ -105,7 +123,7 @@ export default function StylistView() {
     setTryOnImage(null);
     setSaved(false);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       let attempts = 0;
       let selectedTop: WardrobeItem | null = null;
       let selectedBottom: WardrobeItem | null = null;
@@ -122,6 +140,14 @@ export default function StylistView() {
 
       setOutfit({ top: selectedTop, bottom: selectedBottom });
       setGenerating(false);
+
+      // Persist the generated look to backend history (not favorite by default)
+      await createOutfit({
+        items: [selectedTop.id, selectedBottom.id],
+        visualizationStyle,
+        isFavorite: false,
+        name: `Look ${new Date().toLocaleDateString('en-US')}`,
+      });
 
       toast({
         title: t.stylist.lookGenerated,
