@@ -5,13 +5,28 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+interface WeatherContext {
+  avgTemp: number;
+  conditions: string[];
+  recommendation: string;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { userAvatarUrl, topImageUrl, bottomImageUrl, userDescription, visualizationStyle, includeAccessories } = await req.json();
+    const { 
+      userAvatarUrl, 
+      topImageUrl, 
+      bottomImageUrl, 
+      userDescription, 
+      visualizationStyle, 
+      includeAccessories,
+      weather,
+      city,
+    } = await req.json();
     
     if (!topImageUrl || !bottomImageUrl) {
       return new Response(
@@ -30,6 +45,7 @@ serve(async (req) => {
     }
 
     console.log("Generating virtual try-on image with style:", visualizationStyle || "mannequin", "accessories:", includeAccessories);
+    console.log("Weather context:", weather, "City:", city);
 
     // Accessory recommendation text
     const accessoryText = includeAccessories 
@@ -43,16 +59,44 @@ These accessories should enhance the overall outfit.`
       : `
 CRITICAL: Do NOT add any accessories, shoes, watches, belts, or jewelry. Show ONLY the two clothing items provided.`;
 
+    // Build weather/environment context for background
+    let environmentContext = "";
+    if (weather && city) {
+      const temp = weather.avgTemp;
+      const conditions = weather.conditions || [];
+      const isCold = temp < 10;
+      const isHot = temp > 25;
+      const hasSnow = conditions.some((c: string) => c.toLowerCase().includes('snow'));
+      const hasRain = conditions.some((c: string) => ['rain', 'drizzle', 'thunderstorm'].includes(c.toLowerCase()));
+      const isSunny = conditions.some((c: string) => ['clear', 'sunny'].includes(c.toLowerCase()));
+      const isCloudy = conditions.some((c: string) => c.toLowerCase().includes('cloud'));
+
+      let weatherDesc = "";
+      if (hasSnow) weatherDesc = "snowy winter scene with snow falling";
+      else if (hasRain) weatherDesc = "rainy day with wet streets";
+      else if (isCold) weatherDesc = "cold winter day, person might look chilly";
+      else if (isHot && isSunny) weatherDesc = "bright sunny summer day";
+      else if (isCloudy) weatherDesc = "overcast cloudy day";
+      else weatherDesc = "pleasant day";
+
+      environmentContext = `
+BACKGROUND CONTEXT:
+- Location: ${city}
+- Weather: ${temp}°C, ${conditions.join(', ')}
+- Scene: Show the outfit in a realistic ${city} street/urban setting with ${weatherDesc}
+- If the outfit is not appropriate for the weather (e.g. swimsuit in snow), make it humorous - show the person looking cold/uncomfortable but fashionable!`;
+    }
+
     // Define style-specific prompts
     const stylePrompts: Record<string, string> = {
       flatlay: `Generate a flat lay fashion photo.
 Style: Top-down view on clean marble or wood surface. Professional lighting. Instagram aesthetic.`,
       
-      mannequin: `Generate a fashion photo showing these clothing items on a simple mannequin form.
-Style: Clean studio background, professional lighting.`,
+      mannequin: `Generate a fashion photo showing these clothing items on a stylish mannequin or model figure.
+Style: ${environmentContext ? 'Realistic urban background based on context below.' : 'Clean studio background.'} Professional lighting.`,
       
-      editorial: `Generate an editorial fashion photo.
-Style: Magazine quality, artistic lighting.`,
+      editorial: `Generate an editorial fashion photo with a stylish model wearing the outfit.
+Style: Magazine quality, artistic lighting. ${environmentContext ? 'Use the environmental context for background.' : 'Studio or elegant setting.'}`,
     };
 
     const selectedStyle = visualizationStyle || "mannequin";
@@ -65,8 +109,11 @@ INSTRUCTIONS:
 - Use the SECOND image as reference for the BOTTOM clothing item
 - Recreate these exact items in the generated image
 ${accessoryText}
+${environmentContext}
 
 ${userDescription ? `User note: ${userDescription}` : ''}`;
+
+    console.log("Prompt:", prompt);
 
     const messageContent: any[] = [
       { type: "text", text: prompt },

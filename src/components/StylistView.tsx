@@ -273,6 +273,8 @@ export default function StylistView() {
           userDescription: profile?.morphology ? `Body type: ${profile.morphology}` : null,
           visualizationStyle,
           includeAccessories,
+          weather: weather || null,
+          city: city || null,
         },
       });
 
