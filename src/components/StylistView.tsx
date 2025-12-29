@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { useWardrobe, WardrobeItem } from '@/hooks/useWardrobe';
+import { useProfile } from '@/hooks/useProfile';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Sparkles, RefreshCw, Heart, Shirt, AlertCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Sparkles, RefreshCw, Heart, Shirt, AlertCircle, Wand2, Loader2, X, Download } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-// Color harmony rules - colors that work well together
+// Color harmony rules
 const colorHarmony: Record<string, string[]> = {
   'navy': ['white', 'cream', 'beige', 'gray', 'light blue', 'khaki'],
   'black': ['white', 'gray', 'red', 'cream', 'pink', 'gold'],
@@ -21,7 +24,6 @@ const colorHarmony: Record<string, string[]> = {
 };
 
 function getColorName(hexOrName: string): string {
-  // Simple color name extraction
   const lower = hexOrName.toLowerCase();
   if (lower.includes('navy') || lower.includes('bleu marine')) return 'navy';
   if (lower.includes('noir') || lower.includes('black') || lower === '#000000') return 'black';
@@ -39,22 +41,24 @@ function getColorName(hexOrName: string): string {
 function areColorsCompatible(color1: string, color2: string): boolean {
   const name1 = getColorName(color1);
   const name2 = getColorName(color2);
-  
   if (name1 === 'neutral' || name2 === 'neutral') return true;
   if (name1 === name2) return true;
-  
   const compatible = colorHarmony[name1] || [];
   return compatible.includes(name2) || compatible.includes('any');
 }
 
 export default function StylistView() {
   const { availableItems } = useWardrobe();
+  const { profile } = useProfile();
   const { toast } = useToast();
   const [outfit, setOutfit] = useState<{ top: WardrobeItem | null; bottom: WardrobeItem | null }>({
     top: null,
     bottom: null,
   });
   const [generating, setGenerating] = useState(false);
+  const [generatingTryOn, setGeneratingTryOn] = useState(false);
+  const [tryOnImage, setTryOnImage] = useState<string | null>(null);
+  const [tryOnDialogOpen, setTryOnDialogOpen] = useState(false);
 
   const tops = availableItems.filter(item => 
     ['top', 'dress', 'outerwear'].includes(item.category)
@@ -74,25 +78,20 @@ export default function StylistView() {
     }
 
     setGenerating(true);
+    setTryOnImage(null);
 
-    // Simulate AI thinking
     setTimeout(() => {
       let attempts = 0;
       let selectedTop: WardrobeItem | null = null;
       let selectedBottom: WardrobeItem | null = null;
 
-      // Try to find a color-compatible outfit
       while (attempts < 20) {
         selectedTop = tops[Math.floor(Math.random() * tops.length)];
         selectedBottom = bottoms[Math.floor(Math.random() * bottoms.length)];
-
-        if (areColorsCompatible(selectedTop.color, selectedBottom.color)) {
-          break;
-        }
+        if (areColorsCompatible(selectedTop.color, selectedBottom.color)) break;
         attempts++;
       }
 
-      // If still no match, just pick randomly
       if (!selectedTop) selectedTop = tops[Math.floor(Math.random() * tops.length)];
       if (!selectedBottom) selectedBottom = bottoms[Math.floor(Math.random() * bottoms.length)];
 
@@ -104,6 +103,53 @@ export default function StylistView() {
         description: 'Voici une tenue harmonieuse pour vous',
       });
     }, 1000);
+  };
+
+  const generateVirtualTryOn = async () => {
+    if (!outfit.top || !outfit.bottom) {
+      toast({
+        variant: 'destructive',
+        title: 'Générez d\'abord un look',
+        description: 'Cliquez sur "Générer mon look" avant de visualiser',
+      });
+      return;
+    }
+
+    setGeneratingTryOn(true);
+    setTryOnDialogOpen(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('virtual-tryon', {
+        body: {
+          userAvatarUrl: profile?.avatar_url || null,
+          topImageUrl: outfit.top.image_url,
+          bottomImageUrl: outfit.bottom.image_url,
+          userDescription: profile?.morphology ? `Body type: ${profile.morphology}` : null,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.imageUrl) {
+        setTryOnImage(data.imageUrl);
+        toast({
+          title: 'Image générée !',
+          description: 'Voici votre look visualisé',
+        });
+      } else {
+        throw new Error(data?.error || 'No image generated');
+      }
+    } catch (error) {
+      console.error('Virtual try-on error:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erreur de génération',
+        description: error instanceof Error ? error.message : 'Impossible de générer l\'image',
+      });
+      setTryOnDialogOpen(false);
+    } finally {
+      setGeneratingTryOn(false);
+    }
   };
 
   const categoryLabels: Record<string, string> = {
@@ -157,6 +203,25 @@ export default function StylistView() {
             )}
           </div>
 
+          {/* Virtual Try-On Button */}
+          <Button
+            onClick={generateVirtualTryOn}
+            className="w-full gold-gradient text-primary-foreground"
+            disabled={generatingTryOn}
+          >
+            {generatingTryOn ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Génération en cours...
+              </>
+            ) : (
+              <>
+                <Wand2 className="w-4 h-4 mr-2" />
+                Visualiser le look (AI)
+              </>
+            )}
+          </Button>
+
           <div className="flex gap-3">
             <Button
               variant="outline"
@@ -167,7 +232,7 @@ export default function StylistView() {
               <RefreshCw className={`w-4 h-4 mr-2 ${generating ? 'animate-spin' : ''}`} />
               Autre look
             </Button>
-            <Button className="flex-1 gold-gradient text-primary-foreground">
+            <Button className="flex-1" variant="secondary">
               <Heart className="w-4 h-4 mr-2" />
               Sauvegarder
             </Button>
@@ -224,6 +289,67 @@ export default function StylistView() {
           {generating ? 'Génération...' : 'Générer mon look du jour'}
         </Button>
       )}
+
+      {/* Virtual Try-On Dialog */}
+      <Dialog open={tryOnDialogOpen} onOpenChange={setTryOnDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wand2 className="w-5 h-5 text-primary" />
+              Virtual Try-On
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {generatingTryOn ? (
+              <div className="aspect-square bg-muted rounded-xl flex flex-col items-center justify-center">
+                <div className="relative">
+                  <div className="w-20 h-20 rounded-full gold-gradient animate-pulse" />
+                  <Sparkles className="w-8 h-8 text-primary-foreground absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                </div>
+                <p className="mt-4 text-muted-foreground">L'IA génère votre look...</p>
+                <p className="text-sm text-muted-foreground">Cela peut prendre quelques secondes</p>
+              </div>
+            ) : tryOnImage ? (
+              <div className="space-y-3">
+                <div className="aspect-square bg-muted rounded-xl overflow-hidden">
+                  <img 
+                    src={tryOnImage} 
+                    alt="Virtual Try-On" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = tryOnImage;
+                      link.download = 'smartstyle-look.png';
+                      link.click();
+                    }}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Télécharger
+                  </Button>
+                  <Button
+                    className="flex-1 gold-gradient text-primary-foreground"
+                    onClick={generateVirtualTryOn}
+                  >
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Régénérer
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="aspect-square bg-muted rounded-xl flex items-center justify-center">
+                <p className="text-muted-foreground">Erreur de génération</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
