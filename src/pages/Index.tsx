@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useWardrobe } from '@/hooks/useWardrobe';
 import { Button } from '@/components/ui/button';
@@ -14,11 +14,13 @@ import {
   Plane, 
   User, 
   WashingMachine,
-  LogOut
+  LogOut,
+  Filter
 } from 'lucide-react';
 import AddClothingDialog from '@/components/AddClothingDialog';
 import StylistView from '@/components/StylistView';
 import TravelView from '@/components/TravelView';
+import WardrobeFiltersComponent, { WardrobeFilters } from '@/components/WardrobeFilters';
 
 type Tab = 'wardrobe' | 'stylist' | 'travel' | 'profile';
 
@@ -29,6 +31,13 @@ export default function Index() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>('wardrobe');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<WardrobeFilters>({
+    category: 'all',
+    color: 'all',
+    season: 'all',
+    style: 'all',
+  });
 
   const handleToggleLaundry = async (id: string) => {
     try {
@@ -43,6 +52,25 @@ export default function Index() {
     shoes: 'Chaussures', accessory: 'Accessoire', underwear: 'Sous-vêtement',
     swimwear: 'Maillot', sportswear: 'Sport'
   };
+
+  // Get unique colors for filter
+  const uniqueColors = useMemo(() => {
+    const colors = [...new Set(items.map(item => item.color))];
+    return colors.sort();
+  }, [items]);
+
+  // Filter items
+  const filteredItems = useMemo(() => {
+    return items.filter(item => {
+      if (filters.category !== 'all' && item.category !== filters.category) return false;
+      if (filters.color !== 'all' && item.color !== filters.color) return false;
+      if (filters.season !== 'all' && item.season !== filters.season) return false;
+      if (filters.style !== 'all' && item.style !== filters.style) return false;
+      return true;
+    });
+  }, [items, filters]);
+
+  const hasActiveFilters = filters.category !== 'all' || filters.color !== 'all' || filters.season !== 'all' || filters.style !== 'all';
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -69,9 +97,35 @@ export default function Index() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-xl font-bold">Mon Dressing</h2>
-                <p className="text-sm text-muted-foreground">{items.length} vêtements</p>
+                <p className="text-sm text-muted-foreground">
+                  {hasActiveFilters ? `${filteredItems.length} / ${items.length}` : items.length} vêtements
+                </p>
               </div>
+              <Button
+                variant={showFilters ? "secondary" : "outline"}
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className="gap-2"
+              >
+                <Filter className="w-4 h-4" />
+                Filtres
+                {hasActiveFilters && (
+                  <Badge variant="default" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                    !
+                  </Badge>
+                )}
+              </Button>
             </div>
+
+            {showFilters && (
+              <div className="mb-4">
+                <WardrobeFiltersComponent
+                  filters={filters}
+                  onChange={setFilters}
+                  uniqueColors={uniqueColors}
+                />
+              </div>
+            )}
 
             {loading ? (
               <div className="grid grid-cols-2 gap-3">
@@ -87,9 +141,17 @@ export default function Index() {
                   <Plus className="w-4 h-4 mr-2" /> Ajouter un vêtement
                 </Button>
               </Card>
+            ) : filteredItems.length === 0 ? (
+              <Card className="p-8 text-center border-dashed">
+                <Filter className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
+                <p className="text-muted-foreground mb-4">Aucun vêtement ne correspond aux filtres</p>
+                <Button variant="outline" onClick={() => setFilters({ category: 'all', color: 'all', season: 'all', style: 'all' })}>
+                  Effacer les filtres
+                </Button>
+              </Card>
             ) : (
               <div className="grid grid-cols-2 gap-3">
-                {items.map(item => (
+                {filteredItems.map(item => (
                   <Card 
                     key={item.id} 
                     className={`overflow-hidden group cursor-pointer transition-all hover:shadow-lg ${

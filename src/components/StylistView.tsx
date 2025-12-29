@@ -5,12 +5,15 @@ import { useOutfits } from '@/hooks/useOutfits';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Sparkles, RefreshCw, Heart, Shirt, AlertCircle, Wand2, Loader2, Download, LayoutGrid, User, Camera, Check } from 'lucide-react';
+import { Sparkles, RefreshCw, Heart, Shirt, AlertCircle, Wand2, Loader2, Download, LayoutGrid, User, Camera, Check, Watch } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import OutfitGallery from './OutfitGallery';
+import OutfitHistory from './OutfitHistory';
 
 type VisualizationStyle = 'flatlay' | 'mannequin' | 'editorial';
 // Color harmony rules
@@ -65,8 +68,19 @@ export default function StylistView() {
   const [tryOnImage, setTryOnImage] = useState<string | null>(null);
   const [tryOnDialogOpen, setTryOnDialogOpen] = useState(false);
   const [visualizationStyle, setVisualizationStyle] = useState<VisualizationStyle>('mannequin');
+  const [includeAccessories, setIncludeAccessories] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  const handleReplayOutfit = (top: WardrobeItem, bottom: WardrobeItem) => {
+    setOutfit({ top, bottom });
+    setTryOnImage(null);
+    setSaved(false);
+    toast({
+      title: 'Look rechargé !',
+      description: 'Vous pouvez maintenant le visualiser ou le modifier',
+    });
+  };
 
   const tops = availableItems.filter(item => 
     ['top', 'dress', 'outerwear'].includes(item.category)
@@ -135,6 +149,7 @@ export default function StylistView() {
           bottomImageUrl: outfit.bottom.image_url,
           userDescription: profile?.morphology ? `Body type: ${profile.morphology}` : null,
           visualizationStyle,
+          includeAccessories,
         },
       });
 
@@ -317,6 +332,9 @@ export default function StylistView() {
         </Card>
       </div>
 
+      {/* Outfit History */}
+      <OutfitHistory onReplayOutfit={handleReplayOutfit} />
+
       {/* Saved Outfits Gallery */}
       <OutfitGallery />
 
@@ -365,6 +383,26 @@ export default function StylistView() {
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>
+
+            {/* Accessories toggle */}
+            <div className="flex items-center justify-between rounded-lg border border-border p-3 bg-muted/30">
+              <div className="flex items-center gap-2">
+                <Watch className="w-4 h-4 text-primary" />
+                <Label htmlFor="include-accessories" className="text-sm font-medium cursor-pointer">
+                  Ajouter accessoires AI
+                </Label>
+              </div>
+              <Switch
+                id="include-accessories"
+                checked={includeAccessories}
+                onCheckedChange={setIncludeAccessories}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground -mt-2">
+              {includeAccessories 
+                ? "L'IA ajoutera chaussures, montre, ceinture et autres accessoires recommandés" 
+                : "Seuls les vêtements de votre dressing seront affichés"}
+            </p>
 
             {generatingTryOn ? (
               <div className="aspect-square bg-muted rounded-xl flex flex-col items-center justify-center">
