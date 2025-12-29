@@ -12,9 +12,10 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Sparkles, RefreshCw, Heart, Shirt, AlertCircle, Wand2, Loader2, Download, LayoutGrid, User, Camera, Check, Watch, Cloud, MapPin, Brain } from 'lucide-react';
+import { Sparkles, RefreshCw, Heart, Shirt, AlertCircle, Wand2, Loader2, Download, LayoutGrid, User, Camera, Check, Watch, Cloud, MapPin, Brain, Filter } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import OutfitGallery from './OutfitGallery';
 import OutfitHistory from './OutfitHistory';
 
@@ -93,6 +94,10 @@ export default function StylistView() {
   const [weather, setWeather] = useState<{ avgTemp: number; conditions: string[]; recommendation: string } | null>(null);
   const [fetchingWeather, setFetchingWeather] = useState(false);
   const [generatingSmart, setGeneratingSmart] = useState(false);
+  
+  // Season/occasion filters for smart generation
+  const [seasonFilter, setSeasonFilter] = useState<string>('all');
+  const [occasionFilter, setOccasionFilter] = useState<string>('all');
 
   useEffect(() => {
     localStorage.setItem('smartstyle.visualizationStyle', visualizationStyle);
@@ -148,10 +153,35 @@ export default function StylistView() {
   const bottoms = availableItems.filter(item => 
     ['bottom', 'dress'].includes(item.category)
   );
+  
+  // Filtered items for smart generation based on season/occasion
+  const filteredTops = tops.filter(item => {
+    const matchSeason = seasonFilter === 'all' || item.season === seasonFilter || item.season === 'all';
+    const matchOccasion = occasionFilter === 'all' || item.style === occasionFilter;
+    return matchSeason && matchOccasion;
+  });
+  
+  const filteredBottoms = bottoms.filter(item => {
+    const matchSeason = seasonFilter === 'all' || item.season === seasonFilter || item.season === 'all';
+    const matchOccasion = occasionFilter === 'all' || item.style === occasionFilter;
+    return matchSeason && matchOccasion;
+  });
 
   // Generate smart look via AI
   const generateSmartLook = async () => {
-    if (tops.length === 0 || bottoms.length === 0) {
+    // Use filtered items when filters are active
+    const itemsToUse = (seasonFilter !== 'all' || occasionFilter !== 'all') 
+      ? availableItems.filter(item => {
+          const matchSeason = seasonFilter === 'all' || item.season === seasonFilter || item.season === 'all';
+          const matchOccasion = occasionFilter === 'all' || item.style === occasionFilter;
+          return matchSeason && matchOccasion;
+        })
+      : availableItems;
+    
+    const filteredTopsForGen = itemsToUse.filter(item => ['top', 'dress', 'outerwear'].includes(item.category));
+    const filteredBottomsForGen = itemsToUse.filter(item => ['bottom', 'dress'].includes(item.category));
+    
+    if (filteredTopsForGen.length === 0 || filteredBottomsForGen.length === 0) {
       toast({ variant: 'destructive', title: t.stylist.notEnoughItems, description: t.stylist.addTopsAndBottoms });
       return;
     }
@@ -161,7 +191,7 @@ export default function StylistView() {
     setSaved(false);
 
     try {
-      const wardrobeItems = availableItems.map(i => ({
+      const wardrobeItems = itemsToUse.map(i => ({
         id: i.id,
         category: i.category,
         color: i.color,
@@ -367,6 +397,56 @@ export default function StylistView() {
               </div>
             )}
           </div>
+          
+          {/* Season/Occasion filters */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1">
+                <Filter className="w-3 h-3" />
+                {t.stylist.filterBySeason}
+              </Label>
+              <Select value={seasonFilter} onValueChange={setSeasonFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t.stylist.allSeasons} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t.stylist.allSeasons}</SelectItem>
+                  <SelectItem value="spring">{t.seasons.spring}</SelectItem>
+                  <SelectItem value="summer">{t.seasons.summer}</SelectItem>
+                  <SelectItem value="fall">{t.seasons.fall}</SelectItem>
+                  <SelectItem value="winter">{t.seasons.winter}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1">
+                <Filter className="w-3 h-3" />
+                {t.stylist.filterByOccasion}
+              </Label>
+              <Select value={occasionFilter} onValueChange={setOccasionFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t.stylist.allOccasions} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t.stylist.allOccasions}</SelectItem>
+                  <SelectItem value="casual">{t.styles.casual}</SelectItem>
+                  <SelectItem value="formal">{t.styles.formal}</SelectItem>
+                  <SelectItem value="business">{t.styles.business}</SelectItem>
+                  <SelectItem value="sport">{t.styles.sport}</SelectItem>
+                  <SelectItem value="evening">{t.styles.evening}</SelectItem>
+                  <SelectItem value="vacation">{t.styles.vacation}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          {/* Show filtered count */}
+          {(seasonFilter !== 'all' || occasionFilter !== 'all') && (
+            <p className="text-xs text-muted-foreground">
+              {filteredTops.length} {t.stylist.topsAvailable}, {filteredBottoms.length} {t.stylist.bottomsAvailable}
+            </p>
+          )}
+          
           <div className="space-y-2">
             <Label>{t.stylist.yourMood}</Label>
             <Textarea
@@ -378,7 +458,7 @@ export default function StylistView() {
           </div>
           <Button
             onClick={generateSmartLook}
-            disabled={generatingSmart || tops.length === 0 || bottoms.length === 0}
+            disabled={generatingSmart || (seasonFilter !== 'all' || occasionFilter !== 'all' ? (filteredTops.length === 0 || filteredBottoms.length === 0) : (tops.length === 0 || bottoms.length === 0))}
             className="w-full gold-gradient text-primary-foreground"
           >
             {generatingSmart ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Brain className="w-4 h-4 mr-2" />}

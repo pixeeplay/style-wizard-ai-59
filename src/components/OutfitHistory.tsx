@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { History, Calendar, Play, Trash2, LayoutGrid, User, Camera } from 'lucide-react';
+import { History, Calendar, Play, Trash2, LayoutGrid, User, Camera, Heart } from 'lucide-react';
 
 interface OutfitHistoryProps {
   onReplayOutfit: (top: WardrobeItem, bottom: WardrobeItem) => void;
@@ -13,7 +13,7 @@ interface OutfitHistoryProps {
 
 export default function OutfitHistory({ onReplayOutfit }: OutfitHistoryProps) {
   const { t } = useTranslation();
-  const { outfits, loading, deleteOutfit } = useOutfits();
+  const { outfits, loading, deleteOutfit, toggleFavorite } = useOutfits();
   const { items: wardrobeItems } = useWardrobe();
 
   const styleLabels: Record<string, { label: string; icon: React.ReactNode }> = {
@@ -122,6 +122,15 @@ export default function OutfitHistory({ onReplayOutfit }: OutfitHistoryProps) {
                 </div>
 
                 <div className="flex flex-col gap-1">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className={`h-8 w-8 ${outfit.is_favorite ? 'text-primary' : ''}`}
+                    onClick={() => toggleFavorite(outfit.id)}
+                    title={outfit.is_favorite ? t.outfitHistory.removeFromFavorites : t.outfitHistory.addToFavorites}
+                  >
+                    <Heart className={`w-4 h-4 ${outfit.is_favorite ? 'fill-current' : ''}`} />
+                  </Button>
                   <Button
                     size="icon"
                     variant="ghost"

@@ -175,6 +175,10 @@ export const translations = {
     basedOnMood: 'Based on your mood and the weather',
     enterCity: 'Enter your city',
     cityPlaceholder: 'Paris, London, New York...',
+    filterBySeason: 'Filter by season',
+    filterByOccasion: 'Filter by occasion',
+    allSeasons: 'All seasons',
+    allOccasions: 'All occasions',
   },
 
   // Outfit history
@@ -184,6 +188,8 @@ export const translations = {
     replayLook: 'Replay this look',
     itemsUnavailable: 'Items unavailable',
     looks: (count: number) => `${count} looks`,
+    addToFavorites: 'Add to favorites',
+    removeFromFavorites: 'Remove from favorites',
   },
 
   // Outfit gallery

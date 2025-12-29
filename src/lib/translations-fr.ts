@@ -175,6 +175,10 @@ export const translationsFr = {
     basedOnMood: 'Basé sur votre humeur et la météo',
     enterCity: 'Entrez votre ville',
     cityPlaceholder: 'Paris, Lyon, Marseille...',
+    filterBySeason: 'Filtrer par saison',
+    filterByOccasion: 'Filtrer par occasion',
+    allSeasons: 'Toutes saisons',
+    allOccasions: 'Toutes occasions',
   },
 
   // Outfit history
@@ -184,6 +188,8 @@ export const translationsFr = {
     replayLook: 'Rejouer ce look',
     itemsUnavailable: 'Articles indisponibles',
     looks: (count: number) => `${count} looks`,
+    addToFavorites: 'Ajouter aux favoris',
+    removeFromFavorites: 'Retirer des favoris',
   },
 
   // Outfit gallery
