@@ -255,7 +255,7 @@ export default function Index() {
 
               {/* Manual selector (disabled when auto is on) */}
               <Select 
-                value={manualTheme} 
+                value={autoTheme ? suggestedTheme : manualTheme} 
                 onValueChange={(v) => setTheme(v as any)}
                 disabled={autoTheme}
               >
