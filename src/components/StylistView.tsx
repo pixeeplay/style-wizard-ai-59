@@ -6,9 +6,11 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Sparkles, RefreshCw, Heart, Shirt, AlertCircle, Wand2, Loader2, X, Download } from 'lucide-react';
+import { Sparkles, RefreshCw, Heart, Shirt, AlertCircle, Wand2, Loader2, Download, LayoutGrid, User, Camera } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
+type VisualizationStyle = 'flatlay' | 'mannequin' | 'editorial';
 // Color harmony rules
 const colorHarmony: Record<string, string[]> = {
   'navy': ['white', 'cream', 'beige', 'gray', 'light blue', 'khaki'],
@@ -59,6 +61,7 @@ export default function StylistView() {
   const [generatingTryOn, setGeneratingTryOn] = useState(false);
   const [tryOnImage, setTryOnImage] = useState<string | null>(null);
   const [tryOnDialogOpen, setTryOnDialogOpen] = useState(false);
+  const [visualizationStyle, setVisualizationStyle] = useState<VisualizationStyle>('mannequin');
 
   const tops = availableItems.filter(item => 
     ['top', 'dress', 'outerwear'].includes(item.category)
@@ -125,6 +128,7 @@ export default function StylistView() {
           topImageUrl: outfit.top.image_url,
           bottomImageUrl: outfit.bottom.image_url,
           userDescription: profile?.morphology ? `Body type: ${profile.morphology}` : null,
+          visualizationStyle,
         },
       });
 
@@ -301,6 +305,30 @@ export default function StylistView() {
           </DialogHeader>
 
           <div className="space-y-4">
+            {/* Style selector */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-muted-foreground">Style de visualisation</p>
+              <ToggleGroup 
+                type="single" 
+                value={visualizationStyle} 
+                onValueChange={(value) => value && setVisualizationStyle(value as VisualizationStyle)}
+                className="w-full justify-start"
+              >
+                <ToggleGroupItem value="flatlay" className="flex-1 gap-2">
+                  <LayoutGrid className="w-4 h-4" />
+                  <span className="hidden sm:inline">Flat Lay</span>
+                </ToggleGroupItem>
+                <ToggleGroupItem value="mannequin" className="flex-1 gap-2">
+                  <User className="w-4 h-4" />
+                  <span className="hidden sm:inline">Mannequin</span>
+                </ToggleGroupItem>
+                <ToggleGroupItem value="editorial" className="flex-1 gap-2">
+                  <Camera className="w-4 h-4" />
+                  <span className="hidden sm:inline">Éditorial</span>
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+
             {generatingTryOn ? (
               <div className="aspect-square bg-muted rounded-xl flex flex-col items-center justify-center">
                 <div className="relative">
@@ -308,7 +336,7 @@ export default function StylistView() {
                   <Sparkles className="w-8 h-8 text-primary-foreground absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                 </div>
                 <p className="mt-4 text-muted-foreground">L'IA génère votre look...</p>
-                <p className="text-sm text-muted-foreground">Cela peut prendre quelques secondes</p>
+                <p className="text-sm text-muted-foreground">Style: {visualizationStyle === 'flatlay' ? 'Flat Lay' : visualizationStyle === 'mannequin' ? 'Mannequin' : 'Éditorial'}</p>
               </div>
             ) : tryOnImage ? (
               <div className="space-y-3">
