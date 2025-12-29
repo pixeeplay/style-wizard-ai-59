@@ -1,3 +1,4 @@
+import { useTranslation } from '@/hooks/useTranslation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
@@ -15,38 +16,40 @@ interface WardrobeFiltersProps {
   uniqueColors: string[];
 }
 
-const categories = [
-  { value: 'all', label: 'Toutes catégories' },
-  { value: 'top', label: 'Hauts' },
-  { value: 'bottom', label: 'Bas' },
-  { value: 'dress', label: 'Robes' },
-  { value: 'outerwear', label: 'Vestes' },
-  { value: 'shoes', label: 'Chaussures' },
-  { value: 'accessory', label: 'Accessoires' },
-  { value: 'underwear', label: 'Sous-vêtements' },
-  { value: 'swimwear', label: 'Maillots' },
-  { value: 'sportswear', label: 'Sport' },
-];
-
-const seasons = [
-  { value: 'all', label: 'Toutes saisons' },
-  { value: 'spring', label: 'Printemps' },
-  { value: 'summer', label: 'Été' },
-  { value: 'fall', label: 'Automne' },
-  { value: 'winter', label: 'Hiver' },
-];
-
-const styles = [
-  { value: 'all', label: 'Tous styles' },
-  { value: 'casual', label: 'Casual' },
-  { value: 'formal', label: 'Formel' },
-  { value: 'sport', label: 'Sport' },
-  { value: 'business', label: 'Business' },
-  { value: 'evening', label: 'Soirée' },
-  { value: 'vacation', label: 'Vacances' },
-];
-
 export default function WardrobeFiltersComponent({ filters, onChange, uniqueColors }: WardrobeFiltersProps) {
+  const { t } = useTranslation();
+
+  const categories = [
+    { value: 'all', label: t.categories.all },
+    { value: 'top', label: t.categories.top },
+    { value: 'bottom', label: t.categories.bottom },
+    { value: 'dress', label: t.categories.dress },
+    { value: 'outerwear', label: t.categories.outerwear },
+    { value: 'shoes', label: t.categories.shoes },
+    { value: 'accessory', label: t.categories.accessory },
+    { value: 'underwear', label: t.categories.underwear },
+    { value: 'swimwear', label: t.categories.swimwear },
+    { value: 'sportswear', label: t.categories.sportswear },
+  ];
+
+  const seasons = [
+    { value: 'all', label: t.seasons.all },
+    { value: 'spring', label: t.seasons.spring },
+    { value: 'summer', label: t.seasons.summer },
+    { value: 'fall', label: t.seasons.fall },
+    { value: 'winter', label: t.seasons.winter },
+  ];
+
+  const styles = [
+    { value: 'all', label: t.styles.all },
+    { value: 'casual', label: t.styles.casual },
+    { value: 'formal', label: t.styles.formal },
+    { value: 'sport', label: t.styles.sport },
+    { value: 'business', label: t.styles.business },
+    { value: 'evening', label: t.styles.evening },
+    { value: 'vacation', label: t.styles.vacation },
+  ];
+
   const hasActiveFilters = filters.category !== 'all' || filters.color !== 'all' || filters.season !== 'all' || filters.style !== 'all';
 
   const resetFilters = () => {
@@ -61,7 +64,7 @@ export default function WardrobeFiltersComponent({ filters, onChange, uniqueColo
           onValueChange={(value) => onChange({ ...filters, category: value })}
         >
           <SelectTrigger className="h-9 text-xs">
-            <SelectValue placeholder="Catégorie" />
+            <SelectValue placeholder={t.filters.category} />
           </SelectTrigger>
           <SelectContent>
             {categories.map((cat) => (
@@ -77,10 +80,10 @@ export default function WardrobeFiltersComponent({ filters, onChange, uniqueColo
           onValueChange={(value) => onChange({ ...filters, color: value })}
         >
           <SelectTrigger className="h-9 text-xs">
-            <SelectValue placeholder="Couleur" />
+            <SelectValue placeholder={t.filters.color} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Toutes couleurs</SelectItem>
+            <SelectItem value="all">{t.wardrobe.allColors}</SelectItem>
             {uniqueColors.map((color) => (
               <SelectItem key={color} value={color}>
                 <div className="flex items-center gap-2">
@@ -100,7 +103,7 @@ export default function WardrobeFiltersComponent({ filters, onChange, uniqueColo
           onValueChange={(value) => onChange({ ...filters, season: value })}
         >
           <SelectTrigger className="h-9 text-xs">
-            <SelectValue placeholder="Saison" />
+            <SelectValue placeholder={t.filters.season} />
           </SelectTrigger>
           <SelectContent>
             {seasons.map((s) => (
@@ -116,7 +119,7 @@ export default function WardrobeFiltersComponent({ filters, onChange, uniqueColo
           onValueChange={(value) => onChange({ ...filters, style: value })}
         >
           <SelectTrigger className="h-9 text-xs">
-            <SelectValue placeholder="Style" />
+            <SelectValue placeholder={t.filters.style} />
           </SelectTrigger>
           <SelectContent>
             {styles.map((s) => (
@@ -136,7 +139,7 @@ export default function WardrobeFiltersComponent({ filters, onChange, uniqueColo
           className="text-xs h-7 text-muted-foreground"
         >
           <X className="w-3 h-3 mr-1" />
-          Effacer les filtres
+          {t.filters.clearFilters}
         </Button>
       )}
     </div>

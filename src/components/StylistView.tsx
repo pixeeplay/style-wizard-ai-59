@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useWardrobe, WardrobeItem } from '@/hooks/useWardrobe';
 import { useProfile } from '@/hooks/useProfile';
 import { useOutfits } from '@/hooks/useOutfits';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +60,7 @@ export default function StylistView() {
   const { profile } = useProfile();
   const { saveOutfit } = useOutfits();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [outfit, setOutfit] = useState<{ top: WardrobeItem | null; bottom: WardrobeItem | null }>({
     top: null,
     bottom: null,
@@ -77,12 +79,12 @@ export default function StylistView() {
     setTryOnImage(null);
     setSaved(false);
     toast({
-      title: 'Look rechargé !',
-      description: 'Vous pouvez maintenant le visualiser ou le modifier',
+      title: t.stylist.lookReloaded,
+      description: t.stylist.canNowVisualize,
     });
   };
 
-  const tops = availableItems.filter(item => 
+  const tops = availableItems.filter(item =>
     ['top', 'dress', 'outerwear'].includes(item.category)
   );
   const bottoms = availableItems.filter(item => 
@@ -93,8 +95,8 @@ export default function StylistView() {
     if (tops.length === 0 || bottoms.length === 0) {
       toast({
         variant: 'destructive',
-        title: 'Pas assez de vêtements',
-        description: 'Ajoutez au moins un haut et un bas à votre dressing',
+        title: t.stylist.notEnoughItems,
+        description: t.stylist.addTopsAndBottoms,
       });
       return;
     }
@@ -122,8 +124,8 @@ export default function StylistView() {
       setGenerating(false);
 
       toast({
-        title: 'Look généré !',
-        description: 'Voici une tenue harmonieuse pour vous',
+        title: t.stylist.lookGenerated,
+        description: t.stylist.harmoniousOutfit,
       });
     }, 1000);
   };
@@ -132,8 +134,8 @@ export default function StylistView() {
     if (!outfit.top || !outfit.bottom) {
       toast({
         variant: 'destructive',
-        title: 'Générez d\'abord un look',
-        description: 'Cliquez sur "Générer mon look" avant de visualiser',
+        title: t.stylist.generateLookFirst,
+        description: t.stylist.clickGenerateBefore,
       });
       return;
     }
@@ -158,8 +160,8 @@ export default function StylistView() {
       if (data?.imageUrl) {
         setTryOnImage(data.imageUrl);
         toast({
-          title: 'Image générée !',
-          description: 'Voici votre look visualisé',
+          title: t.stylist.imageGenerated,
+          description: t.stylist.lookVisualized,
         });
       } else {
         throw new Error(data?.error || 'No image generated');
@@ -168,8 +170,8 @@ export default function StylistView() {
       console.error('Virtual try-on error:', error);
       toast({
         variant: 'destructive',
-        title: 'Erreur de génération',
-        description: error instanceof Error ? error.message : 'Impossible de générer l\'image',
+        title: t.stylist.generationError,
+        description: error instanceof Error ? error.message : t.stylist.unableToGenerate,
       });
       setTryOnDialogOpen(false);
     } finally {
@@ -188,21 +190,17 @@ export default function StylistView() {
     if (result) {
       setSaved(true);
       toast({
-        title: 'Look sauvegardé !',
-        description: 'Retrouvez-le dans vos favoris',
+        title: t.stylist.lookSaved,
+        description: t.stylist.findInFavorites,
       });
     }
-  };
-
-  const categoryLabels: Record<string, string> = {
-    top: 'Haut', bottom: 'Bas', dress: 'Robe', outerwear: 'Veste'
   };
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-xl font-bold">Styliste AI</h2>
-        <p className="text-sm text-muted-foreground">Générez des looks harmonieux</p>
+        <h2 className="text-xl font-bold">{t.stylist.title}</h2>
+        <p className="text-sm text-muted-foreground">{t.stylist.subtitle}</p>
       </div>
 
       {/* Generated Outfit */}
@@ -214,15 +212,15 @@ export default function StylistView() {
                 <div className="aspect-square bg-muted">
                   <img 
                     src={outfit.top.image_url} 
-                    alt={outfit.top.name || 'Haut'}
+                    alt={outfit.top.name || t.categoryLabels.top}
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <div className="p-2">
                   <p className="text-sm font-medium truncate">
-                    {outfit.top.name || categoryLabels[outfit.top.category]}
+                    {outfit.top.name || t.categoryLabels[outfit.top.category as keyof typeof t.categoryLabels]}
                   </p>
-                  <Badge variant="secondary" className="text-xs mt-1">Haut</Badge>
+                  <Badge variant="secondary" className="text-xs mt-1">{t.categoryLabels.top}</Badge>
                 </div>
               </Card>
             )}
@@ -231,15 +229,15 @@ export default function StylistView() {
                 <div className="aspect-square bg-muted">
                   <img 
                     src={outfit.bottom.image_url} 
-                    alt={outfit.bottom.name || 'Bas'}
+                    alt={outfit.bottom.name || t.categoryLabels.bottom}
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <div className="p-2">
                   <p className="text-sm font-medium truncate">
-                    {outfit.bottom.name || categoryLabels[outfit.bottom.category]}
+                    {outfit.bottom.name || t.categoryLabels[outfit.bottom.category as keyof typeof t.categoryLabels]}
                   </p>
-                  <Badge variant="secondary" className="text-xs mt-1">Bas</Badge>
+                  <Badge variant="secondary" className="text-xs mt-1">{t.categoryLabels.bottom}</Badge>
                 </div>
               </Card>
             )}
@@ -254,12 +252,12 @@ export default function StylistView() {
             {generatingTryOn ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Génération en cours...
+                {t.stylist.generatingImage}
               </>
             ) : (
               <>
                 <Wand2 className="w-4 h-4 mr-2" />
-                Visualiser le look (AI)
+                {t.stylist.visualize}
               </>
             )}
           </Button>
@@ -272,7 +270,7 @@ export default function StylistView() {
               disabled={generating}
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${generating ? 'animate-spin' : ''}`} />
-              Autre look
+              {t.stylist.anotherLook}
             </Button>
             <Button 
               className="flex-1" 
@@ -287,7 +285,7 @@ export default function StylistView() {
               ) : (
                 <Heart className="w-4 h-4 mr-2" />
               )}
-              {saved ? 'Sauvegardé' : 'Sauvegarder'}
+              {saved ? t.common.saved : t.stylist.saveLook}
             </Button>
           </div>
         </div>
@@ -296,16 +294,16 @@ export default function StylistView() {
           {availableItems.length === 0 ? (
             <>
               <AlertCircle className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-              <p className="text-muted-foreground mb-2">Votre dressing est vide</p>
+              <p className="text-muted-foreground mb-2">{t.stylist.wardrobeEmpty}</p>
               <p className="text-sm text-muted-foreground">
-                Ajoutez des vêtements pour générer des looks
+                {t.stylist.addItemsFirst}
               </p>
             </>
           ) : (
             <>
               <Shirt className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
               <p className="text-muted-foreground mb-4">
-                Prêt à découvrir votre look du jour ?
+                {t.stylist.readyToDiscover}
               </p>
               <Button 
                 onClick={generateOutfit} 
@@ -313,7 +311,7 @@ export default function StylistView() {
                 disabled={generating}
               >
                 <Sparkles className="w-4 h-4 mr-2" />
-                {generating ? 'Génération...' : 'Générer mon look'}
+                {generating ? t.stylist.generating : t.stylist.generateLook}
               </Button>
             </>
           )}
@@ -324,11 +322,11 @@ export default function StylistView() {
       <div className="grid grid-cols-2 gap-3">
         <Card className="p-4 text-center">
           <p className="text-2xl font-bold text-primary">{tops.length}</p>
-          <p className="text-sm text-muted-foreground">Hauts disponibles</p>
+          <p className="text-sm text-muted-foreground">{t.stylist.topsAvailable}</p>
         </Card>
         <Card className="p-4 text-center">
           <p className="text-2xl font-bold text-primary">{bottoms.length}</p>
-          <p className="text-sm text-muted-foreground">Bas disponibles</p>
+          <p className="text-sm text-muted-foreground">{t.stylist.bottomsAvailable}</p>
         </Card>
       </div>
 
@@ -345,7 +343,7 @@ export default function StylistView() {
           disabled={generating}
         >
           <Sparkles className="w-4 h-4 mr-2" />
-          {generating ? 'Génération...' : 'Générer mon look du jour'}
+          {generating ? t.stylist.generating : t.stylist.generateMyLook}
         </Button>
       )}
 
@@ -355,14 +353,14 @@ export default function StylistView() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wand2 className="w-5 h-5 text-primary" />
-              Virtual Try-On
+              {t.stylist.virtualTryOn}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             {/* Style selector */}
             <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Style de visualisation</p>
+              <p className="text-sm font-medium text-muted-foreground">{t.stylist.visualizationStyle}</p>
               <ToggleGroup 
                 type="single" 
                 value={visualizationStyle} 
@@ -371,15 +369,15 @@ export default function StylistView() {
               >
                 <ToggleGroupItem value="flatlay" className="flex-1 gap-2">
                   <LayoutGrid className="w-4 h-4" />
-                  <span className="hidden sm:inline">Flat Lay</span>
+                  <span className="hidden sm:inline">{t.stylist.flatLay}</span>
                 </ToggleGroupItem>
                 <ToggleGroupItem value="mannequin" className="flex-1 gap-2">
                   <User className="w-4 h-4" />
-                  <span className="hidden sm:inline">Mannequin</span>
+                  <span className="hidden sm:inline">{t.stylist.mannequin}</span>
                 </ToggleGroupItem>
                 <ToggleGroupItem value="editorial" className="flex-1 gap-2">
                   <Camera className="w-4 h-4" />
-                  <span className="hidden sm:inline">Éditorial</span>
+                  <span className="hidden sm:inline">{t.stylist.editorial}</span>
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>
@@ -389,7 +387,7 @@ export default function StylistView() {
               <div className="flex items-center gap-2">
                 <Watch className="w-4 h-4 text-primary" />
                 <Label htmlFor="include-accessories" className="text-sm font-medium cursor-pointer">
-                  Ajouter accessoires AI
+                  {t.stylist.includeAccessories}
                 </Label>
               </div>
               <Switch
@@ -400,8 +398,8 @@ export default function StylistView() {
             </div>
             <p className="text-xs text-muted-foreground -mt-2">
               {includeAccessories 
-                ? "L'IA ajoutera chaussures, montre, ceinture et autres accessoires recommandés" 
-                : "Seuls les vêtements de votre dressing seront affichés"}
+                ? t.stylist.accessoriesOn 
+                : t.stylist.accessoriesOff}
             </p>
 
             {generatingTryOn ? (
@@ -410,8 +408,8 @@ export default function StylistView() {
                   <div className="w-20 h-20 rounded-full gold-gradient animate-pulse" />
                   <Sparkles className="w-8 h-8 text-primary-foreground absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                 </div>
-                <p className="mt-4 text-muted-foreground">L'IA génère votre look...</p>
-                <p className="text-sm text-muted-foreground">Style: {visualizationStyle === 'flatlay' ? 'Flat Lay' : visualizationStyle === 'mannequin' ? 'Mannequin' : 'Éditorial'}</p>
+                <p className="mt-4 text-muted-foreground">{t.stylist.aiGenerating}</p>
+                <p className="text-sm text-muted-foreground">{t.stylist.style}: {visualizationStyle === 'flatlay' ? t.stylist.flatLay : visualizationStyle === 'mannequin' ? t.stylist.mannequin : t.stylist.editorial}</p>
               </div>
             ) : tryOnImage ? (
               <div className="space-y-3">
@@ -434,14 +432,14 @@ export default function StylistView() {
                     }}
                   >
                     <Download className="w-4 h-4 mr-2" />
-                    Télécharger
+                    {t.common.download}
                   </Button>
                   <Button
                     className="flex-1 gold-gradient text-primary-foreground"
                     onClick={generateVirtualTryOn}
                   >
                     <RefreshCw className="w-4 h-4 mr-2" />
-                    Régénérer
+                    {t.common.regenerate}
                   </Button>
                 </div>
               </div>
