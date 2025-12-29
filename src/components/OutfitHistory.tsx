@@ -1,3 +1,4 @@
+import { useTranslation } from '@/hooks/useTranslation';
 import { useOutfits, Outfit } from '@/hooks/useOutfits';
 import { useWardrobe, WardrobeItem } from '@/hooks/useWardrobe';
 import { Card } from '@/components/ui/card';
@@ -10,20 +11,21 @@ interface OutfitHistoryProps {
   onReplayOutfit: (top: WardrobeItem, bottom: WardrobeItem) => void;
 }
 
-const styleLabels: Record<string, { label: string; icon: React.ReactNode }> = {
-  flatlay: { label: 'Flat Lay', icon: <LayoutGrid className="w-3 h-3" /> },
-  mannequin: { label: 'Mannequin', icon: <User className="w-3 h-3" /> },
-  editorial: { label: 'Éditorial', icon: <Camera className="w-3 h-3" /> },
-};
-
 export default function OutfitHistory({ onReplayOutfit }: OutfitHistoryProps) {
+  const { t } = useTranslation();
   const { outfits, loading, deleteOutfit } = useOutfits();
   const { items: wardrobeItems } = useWardrobe();
+
+  const styleLabels: Record<string, { label: string; icon: React.ReactNode }> = {
+    flatlay: { label: t.stylist.flatLay, icon: <LayoutGrid className="w-3 h-3" /> },
+    mannequin: { label: t.stylist.mannequin, icon: <User className="w-3 h-3" /> },
+    editorial: { label: t.stylist.editorial, icon: <Camera className="w-3 h-3" /> },
+  };
 
   const getItem = (itemId: string) => wardrobeItems.find(i => i.id === itemId);
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('fr-FR', {
+    return new Date(dateStr).toLocaleDateString('en-US', {
       day: 'numeric',
       month: 'short',
       hour: '2-digit',
@@ -44,7 +46,7 @@ export default function OutfitHistory({ onReplayOutfit }: OutfitHistoryProps) {
       <div className="space-y-3">
         <h3 className="font-semibold flex items-center gap-2">
           <History className="w-4 h-4 text-primary" />
-          Historique des looks
+          {t.outfitHistory.title}
         </h3>
         <div className="space-y-2">
           {[1, 2, 3].map(i => (
@@ -59,7 +61,7 @@ export default function OutfitHistory({ onReplayOutfit }: OutfitHistoryProps) {
     return (
       <Card className="p-6 text-center border-dashed">
         <History className="w-10 h-10 mx-auto mb-3 text-muted-foreground" />
-        <p className="text-muted-foreground text-sm">Aucun look dans l'historique</p>
+        <p className="text-muted-foreground text-sm">{t.outfitHistory.noLooks}</p>
       </Card>
     );
   }
@@ -68,7 +70,7 @@ export default function OutfitHistory({ onReplayOutfit }: OutfitHistoryProps) {
     <div className="space-y-3">
       <h3 className="font-semibold flex items-center gap-2">
         <History className="w-4 h-4 text-primary" />
-        Historique ({outfits.length} looks)
+        {t.outfitHistory.title} ({t.outfitHistory.looks(outfits.length)})
       </h3>
 
       <ScrollArea className="h-[300px]">
@@ -126,7 +128,7 @@ export default function OutfitHistory({ onReplayOutfit }: OutfitHistoryProps) {
                     className="h-8 w-8"
                     disabled={!canReplay}
                     onClick={() => handleReplay(outfit)}
-                    title={canReplay ? 'Rejouer ce look' : 'Vêtements non disponibles'}
+                    title={canReplay ? t.outfitHistory.replayLook : t.outfitHistory.itemsUnavailable}
                   >
                     <Play className="w-4 h-4" />
                   </Button>

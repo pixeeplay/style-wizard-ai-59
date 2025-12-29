@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useWardrobe } from '@/hooks/useWardrobe';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +30,7 @@ export default function Index() {
   const { profile } = useProfile();
   const { items, toggleLaundry, loading } = useWardrobe();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<Tab>('wardrobe');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -43,14 +45,8 @@ export default function Index() {
     try {
       await toggleLaundry(id);
     } catch {
-      toast({ variant: 'destructive', title: 'Erreur', description: 'Impossible de changer le statut' });
+      toast({ variant: 'destructive', title: t.common.error, description: 'Unable to change status' });
     }
-  };
-
-  const categoryLabels: Record<string, string> = {
-    top: 'Haut', bottom: 'Bas', dress: 'Robe', outerwear: 'Veste',
-    shoes: 'Chaussures', accessory: 'Accessoire', underwear: 'Sous-vêtement',
-    swimwear: 'Maillot', sportswear: 'Sport'
   };
 
   // Get unique colors for filter
@@ -96,9 +92,9 @@ export default function Index() {
           <>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-xl font-bold">Mon Dressing</h2>
+                <h2 className="text-xl font-bold">{t.wardrobe.title}</h2>
                 <p className="text-sm text-muted-foreground">
-                  {hasActiveFilters ? `${filteredItems.length} / ${items.length}` : items.length} vêtements
+                  {hasActiveFilters ? t.wardrobe.filteredCount(filteredItems.length, items.length) : t.wardrobe.itemsCount(items.length)}
                 </p>
               </div>
               <Button
@@ -108,7 +104,7 @@ export default function Index() {
                 className="gap-2"
               >
                 <Filter className="w-4 h-4" />
-                Filtres
+                {t.wardrobe.filters}
                 {hasActiveFilters && (
                   <Badge variant="default" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
                     !
@@ -136,17 +132,17 @@ export default function Index() {
             ) : items.length === 0 ? (
               <Card className="p-8 text-center border-dashed">
                 <Shirt className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-                <p className="text-muted-foreground mb-4">Votre dressing est vide</p>
+                <p className="text-muted-foreground mb-4">{t.wardrobe.emptyWardrobe}</p>
                 <Button onClick={() => setAddDialogOpen(true)} className="gold-gradient text-primary-foreground">
-                  <Plus className="w-4 h-4 mr-2" /> Ajouter un vêtement
+                  <Plus className="w-4 h-4 mr-2" /> {t.wardrobe.addFirstItem}
                 </Button>
               </Card>
             ) : filteredItems.length === 0 ? (
               <Card className="p-8 text-center border-dashed">
                 <Filter className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
-                <p className="text-muted-foreground mb-4">Aucun vêtement ne correspond aux filtres</p>
+                <p className="text-muted-foreground mb-4">{t.wardrobe.noMatchingItems}</p>
                 <Button variant="outline" onClick={() => setFilters({ category: 'all', color: 'all', season: 'all', style: 'all' })}>
-                  Effacer les filtres
+                  {t.wardrobe.clearFilters}
                 </Button>
               </Card>
             ) : (
@@ -162,7 +158,7 @@ export default function Index() {
                     <div className="aspect-square relative bg-muted">
                       <img 
                         src={item.image_url} 
-                        alt={item.name || 'Vêtement'}
+                        alt={item.name || 'Clothing'}
                         className="w-full h-full object-cover"
                       />
                       {item.status === 'laundry' && (
@@ -172,14 +168,14 @@ export default function Index() {
                       )}
                     </div>
                     <div className="p-2">
-                      <p className="text-sm font-medium truncate">{item.name || categoryLabels[item.category]}</p>
+                      <p className="text-sm font-medium truncate">{item.name || t.categoryLabels[item.category as keyof typeof t.categoryLabels]}</p>
                       <div className="flex items-center gap-1 mt-1">
                         <div 
                           className="w-3 h-3 rounded-full border border-border" 
                           style={{ backgroundColor: item.color }}
                         />
                         <Badge variant="secondary" className="text-xs">
-                          {categoryLabels[item.category]}
+                          {t.categoryLabels[item.category as keyof typeof t.categoryLabels]}
                         </Badge>
                       </div>
                     </div>
@@ -214,7 +210,7 @@ export default function Index() {
               <p className="text-muted-foreground">{user?.email}</p>
             </div>
             <Button variant="outline" className="w-full" onClick={signOut}>
-              <LogOut className="w-4 h-4 mr-2" /> Déconnexion
+              <LogOut className="w-4 h-4 mr-2" /> {t.common.logout}
             </Button>
           </div>
         )}
@@ -224,10 +220,10 @@ export default function Index() {
       <nav className="fixed bottom-0 left-0 right-0 glass border-t border-border/50 z-50">
         <div className="max-w-lg mx-auto flex">
           {[
-            { id: 'wardrobe' as Tab, icon: Shirt, label: 'Dressing' },
-            { id: 'stylist' as Tab, icon: Sparkles, label: 'Styliste' },
-            { id: 'travel' as Tab, icon: Plane, label: 'Voyage' },
-            { id: 'profile' as Tab, icon: User, label: 'Profil' },
+            { id: 'wardrobe' as Tab, icon: Shirt, label: t.nav.wardrobe },
+            { id: 'stylist' as Tab, icon: Sparkles, label: t.nav.stylist },
+            { id: 'travel' as Tab, icon: Plane, label: t.nav.travel },
+            { id: 'profile' as Tab, icon: User, label: t.nav.profile },
           ].map(tab => (
             <button
               key={tab.id}
