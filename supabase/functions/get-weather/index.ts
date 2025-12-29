@@ -51,7 +51,16 @@ serve(async (req) => {
     const geoResponse = await fetch(geoUrl);
     
     if (!geoResponse.ok) {
-      console.error('Geocoding API error:', geoResponse.status, await geoResponse.text());
+      const errorText = await geoResponse.text();
+      console.error('Geocoding API error:', geoResponse.status, errorText);
+      
+      if (geoResponse.status === 401) {
+        return new Response(
+          JSON.stringify({ error: 'Weather API key is invalid or expired. Please update OPENWEATHER_API_KEY.' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ error: 'Geocoding service error' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
