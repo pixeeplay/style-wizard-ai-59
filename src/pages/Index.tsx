@@ -33,7 +33,7 @@ export default function Index() {
   const { profile } = useProfile();
   const { items, toggleLaundry, loading } = useWardrobe();
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, language, setLanguage } = useTranslation();
   const { theme, setTheme } = useSeasonalTheme();
   const [activeTab, setActiveTab] = useState<Tab>('wardrobe');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -214,8 +214,23 @@ export default function Index() {
               <p className="text-muted-foreground">{user?.email}</p>
             </div>
 
+            {/* Language selector */}
             <Card className="p-4 space-y-3">
-              <p className="font-semibold">Theme</p>
+              <p className="font-semibold">{language === 'fr' ? 'Langue' : 'Language'}</p>
+              <Select value={language} onValueChange={(v) => setLanguage(v as 'en' | 'fr')}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="fr">Français</SelectItem>
+                </SelectContent>
+              </Select>
+            </Card>
+
+            {/* Theme selector */}
+            <Card className="p-4 space-y-3">
+              <p className="font-semibold">{language === 'fr' ? 'Thème' : 'Theme'}</p>
               <Select value={theme} onValueChange={(v) => setTheme(v as any)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -223,13 +238,15 @@ export default function Index() {
                 <SelectContent>
                   {seasonalThemes.map((opt) => (
                     <SelectItem key={opt.key} value={opt.key}>
-                      {opt.label}
+                      {language === 'fr' ? opt.labelFr : opt.labelEn}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                {seasonalThemes.find((x) => x.key === theme)?.description}
+                {language === 'fr'
+                  ? seasonalThemes.find((x) => x.key === theme)?.descFr
+                  : seasonalThemes.find((x) => x.key === theme)?.descEn}
               </p>
             </Card>
 

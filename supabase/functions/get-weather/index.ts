@@ -49,16 +49,36 @@ serve(async (req) => {
     // First, get coordinates for the destination using geocoding API
     const geoUrl = `http://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(destination)}&limit=1&appid=${apiKey}`;
     const geoResponse = await fetch(geoUrl);
-    const geoData = await geoResponse.json();
-
-    if (!geoData || geoData.length === 0) {
+    
+    if (!geoResponse.ok) {
+      console.error('Geocoding API error:', geoResponse.status, await geoResponse.text());
       return new Response(
-        JSON.stringify({ error: 'Destination not found' }),
+        JSON.stringify({ error: 'Geocoding service error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const geoData = await geoResponse.json();
+    console.log('Geocoding response:', JSON.stringify(geoData));
+
+    if (!geoData || !Array.isArray(geoData) || geoData.length === 0) {
+      console.error('No geocoding results for:', destination);
+      return new Response(
+        JSON.stringify({ error: `City not found: "${destination}". Try a different spelling or add the country name.` }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const { lat, lon, name, country } = geoData[0];
+    const firstResult = geoData[0];
+    if (!firstResult || typeof firstResult.lat !== 'number' || typeof firstResult.lon !== 'number') {
+      console.error('Invalid geocoding result:', firstResult);
+      return new Response(
+        JSON.stringify({ error: 'Invalid location data received' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { lat, lon, name, country } = firstResult;
     console.log(`Found location: ${name}, ${country} at ${lat}, ${lon}`);
 
     // Get 5-day forecast (free API limit)
