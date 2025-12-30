@@ -341,6 +341,12 @@ export const translations = {
     linkCopiedDesc: 'The link has been copied to your clipboard',
     generate3Styles: 'Generate 3 styles',
     generating3Styles: 'Generating 3 styles...',
+    instagramCaption: 'Today\'s outfit styled with SmartStyle AI ✨',
+    pinterestCaption: 'Outfit inspiration',
+    instagramReady: 'Ready for Instagram!',
+    instagramReadyDesc: 'Image downloaded & caption copied to clipboard',
+    shareOther: 'Share...',
+    copyLink: 'Copy link',
   },
 
   calendar: {
@@ -349,6 +355,17 @@ export const translations = {
     outfitsForDate: (count: number) => `${count} look${count > 1 ? 's' : ''} scheduled`,
     scheduledFor: 'Scheduled for',
     dropHere: 'Drop here to schedule',
+  },
+
+  // Wear tracking
+  wearTracking: {
+    wearToday: 'Wear today',
+    wornTimes: (count: number) => `Worn ${count} time${count > 1 ? 's' : ''}`,
+    lastWorn: 'Last worn',
+    never: 'Never',
+    stats: 'Wear Statistics',
+    totalWears: 'Total wears',
+    mostWorn: 'Most worn look',
   },
 };
 

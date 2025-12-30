@@ -5,7 +5,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { History, Calendar, Play, Trash2, LayoutGrid, User, Camera, Heart } from 'lucide-react';
+import { History, Calendar, Play, Trash2, LayoutGrid, User, Camera, Heart, Shirt, TrendingUp } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface OutfitHistoryProps {
   onReplayOutfit: (top: WardrobeItem, bottom: WardrobeItem) => void;
@@ -13,7 +14,7 @@ interface OutfitHistoryProps {
 
 export default function OutfitHistory({ onReplayOutfit }: OutfitHistoryProps) {
   const { t } = useTranslation();
-  const { outfits, loading, deleteOutfit, toggleFavorite } = useOutfits();
+  const { outfits, loading, deleteOutfit, toggleFavorite, markAsWorn, wearStats } = useOutfits();
   const { items: wardrobeItems } = useWardrobe();
 
   const styleLabels: Record<string, { label: string; icon: React.ReactNode }> = {
@@ -30,6 +31,14 @@ export default function OutfitHistory({ onReplayOutfit }: OutfitHistoryProps) {
       month: 'short',
       hour: '2-digit',
       minute: '2-digit',
+    });
+  };
+
+  const formatLastWorn = (dateStr: string | null) => {
+    if (!dateStr) return t.wearTracking.never;
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short',
     });
   };
 
@@ -72,6 +81,30 @@ export default function OutfitHistory({ onReplayOutfit }: OutfitHistoryProps) {
         <History className="w-4 h-4 text-primary" />
         {t.outfitHistory.title} ({t.outfitHistory.looks(outfits.length)})
       </h3>
+
+      {/* Wear Stats Summary */}
+      {wearStats.totalWears > 0 && (
+        <Card className="p-3 bg-muted/30">
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-primary" />
+              <span className="text-muted-foreground">{t.wearTracking.totalWears}:</span>
+              <span className="font-semibold">{wearStats.totalWears}</span>
+            </div>
+            {wearStats.mostWorn && (
+              <div className="flex items-center gap-2">
+                <Shirt className="w-4 h-4 text-primary" />
+                <span className="text-muted-foreground truncate max-w-[120px]">
+                  {wearStats.mostWorn.name}
+                </span>
+                <Badge variant="secondary" className="text-xs">
+                  ×{wearStats.mostWorn.wear_count}
+                </Badge>
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
 
       <ScrollArea className="h-[300px]">
         <div className="space-y-2 pr-3">
@@ -121,15 +154,47 @@ export default function OutfitHistory({ onReplayOutfit }: OutfitHistoryProps) {
                     <Calendar className="w-3 h-3" />
                     {formatDate(outfit.created_at)}
                   </div>
-                  <div className="flex items-center gap-1 mt-1">
+                  <div className="flex items-center gap-1 mt-1 flex-wrap">
                     <Badge variant="secondary" className="text-xs gap-1">
                       {styleInfo.icon}
                       {styleInfo.label}
                     </Badge>
+                    {(outfit.wear_count || 0) > 0 && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge variant="outline" className="text-xs gap-1">
+                              <Shirt className="w-3 h-3" />
+                              ×{outfit.wear_count}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{t.wearTracking.lastWorn}: {formatLastWorn(outfit.last_worn_at)}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-1">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-100"
+                          onClick={() => markAsWorn(outfit.id)}
+                        >
+                          <Shirt className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{t.wearTracking.wearToday}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                   <Button
                     size="icon"
                     variant="ghost"
