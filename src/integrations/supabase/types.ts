@@ -23,8 +23,10 @@ export type Database = {
           last_worn_at: string | null
           name: string | null
           occasion: string | null
+          scheduled_date: string | null
           season: Database["public"]["Enums"]["season"] | null
           try_on_image_url: string | null
+          try_on_images: Json | null
           user_id: string
           visualization_style: string | null
           wear_count: number | null
@@ -37,8 +39,10 @@ export type Database = {
           last_worn_at?: string | null
           name?: string | null
           occasion?: string | null
+          scheduled_date?: string | null
           season?: Database["public"]["Enums"]["season"] | null
           try_on_image_url?: string | null
+          try_on_images?: Json | null
           user_id: string
           visualization_style?: string | null
           wear_count?: number | null
@@ -51,8 +55,10 @@ export type Database = {
           last_worn_at?: string | null
           name?: string | null
           occasion?: string | null
+          scheduled_date?: string | null
           season?: Database["public"]["Enums"]["season"] | null
           try_on_image_url?: string | null
+          try_on_images?: Json | null
           user_id?: string
           visualization_style?: string | null
           wear_count?: number | null

@@ -350,6 +350,21 @@ export const translationsFr = {
     promptTemplate: 'Créer une tenue pour une journée {occasion}. Météo : {weather}',
     noWeather: 'météo inconnue',
   },
+
+  // Gallery & Calendar
+  gallery: {
+    allStyles: 'Tous les styles',
+    shareText: 'Découvrez mon look SmartStyle !',
+    linkCopied: 'Lien copié !',
+    linkCopiedDesc: 'Le lien a été copié dans le presse-papiers',
+  },
+
+  calendar: {
+    title: 'Calendrier des looks',
+    dragToSchedule: 'Glissez un look depuis l\'historique pour le planifier',
+    outfitsForDate: (count: number) => `${count} look${count > 1 ? 's' : ''} planifié${count > 1 ? 's' : ''}`,
+    scheduledFor: 'Planifié pour le',
+  },
 };
 
 export type TranslationsFr = typeof translationsFr;
