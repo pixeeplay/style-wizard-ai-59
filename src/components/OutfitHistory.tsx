@@ -80,7 +80,15 @@ export default function OutfitHistory({ onReplayOutfit }: OutfitHistoryProps) {
             const canReplay = outfit.items.every(id => getItem(id));
 
             return (
-              <Card key={outfit.id} className="p-3 flex gap-3">
+              <Card 
+                key={outfit.id} 
+                className="p-3 flex gap-3 cursor-grab active:cursor-grabbing"
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('outfitId', outfit.id);
+                  e.dataTransfer.effectAllowed = 'move';
+                }}
+              >
                 {outfit.try_on_image_url ? (
                   <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                     <img

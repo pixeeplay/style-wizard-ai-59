@@ -339,6 +339,8 @@ export const translations = {
     shareText: 'Check out my SmartStyle look!',
     linkCopied: 'Link copied!',
     linkCopiedDesc: 'The link has been copied to your clipboard',
+    generate3Styles: 'Generate 3 styles',
+    generating3Styles: 'Generating 3 styles...',
   },
 
   calendar: {
@@ -346,6 +348,7 @@ export const translations = {
     dragToSchedule: 'Drag a look from history to schedule it',
     outfitsForDate: (count: number) => `${count} look${count > 1 ? 's' : ''} scheduled`,
     scheduledFor: 'Scheduled for',
+    dropHere: 'Drop here to schedule',
   },
 };
 
