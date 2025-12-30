@@ -431,6 +431,19 @@ export const translations = {
     needsFreshening: 'May need freshening',
     wash: 'Wash',
   },
+
+  // Capsule Wardrobe
+  capsule: {
+    title: 'Capsule Wardrobe',
+    description: 'A curated selection of versatile items that create maximum outfit combinations',
+    size: 'Capsule size',
+    items: 'items',
+    outfits: 'outfits',
+    showCombinations: 'Show combinations',
+    hideCombinations: 'Hide combinations',
+    moreCombinations: 'more combinations',
+    ofWardrobe: 'of wardrobe',
+  },
 };
 
 export type Translations = typeof translations;

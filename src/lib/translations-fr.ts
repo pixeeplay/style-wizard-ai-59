@@ -449,6 +449,19 @@ export const translationsFr = {
     needsFreshening: 'Peut avoir besoin d\'un rafraîchissement',
     wash: 'Laver',
   },
+
+  // Capsule Wardrobe
+  capsule: {
+    title: 'Garde-robe Capsule',
+    description: 'Une sélection de pièces polyvalentes pour créer un maximum de tenues',
+    size: 'Taille de la capsule',
+    items: 'pièces',
+    outfits: 'tenues',
+    showCombinations: 'Voir les combinaisons',
+    hideCombinations: 'Masquer les combinaisons',
+    moreCombinations: 'combinaisons de plus',
+    ofWardrobe: 'de la garde-robe',
+  },
 };
 
 export type TranslationsFr = typeof translationsFr;
