@@ -24,6 +24,7 @@ import WardrobeAnalytics from './WardrobeAnalytics';
 import OutfitRecommendations from './OutfitRecommendations';
 import WeeklyPlanner from './WeeklyPlanner';
 import LaundryTracker from './LaundryTracker';
+import CapsuleWardrobe from './CapsuleWardrobe';
 
 type VisualizationStyle = 'flatlay' | 'mannequin' | 'editorial';
 // Color harmony rules
@@ -695,6 +696,9 @@ export default function StylistView() {
 
       {/* Laundry Tracker */}
       <LaundryTracker />
+
+      {/* Capsule Wardrobe */}
+      <CapsuleWardrobe />
 
       {/* Outfit Recommendations */}
       <OutfitRecommendations onSelectOutfit={handleReplayOutfit} />
