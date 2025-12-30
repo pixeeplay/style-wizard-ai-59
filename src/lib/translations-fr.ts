@@ -336,6 +336,20 @@ export const translationsFr = {
     style: 'Style',
     clearFilters: 'Effacer les filtres',
   },
+
+  // Outfit of the Day
+  ootd: {
+    title: 'Look du jour',
+    description: 'Recevez une suggestion de tenue basée sur la météo et vos projets',
+    yourLookReady: 'Votre look du jour est prêt !',
+    yourCity: 'Votre ville',
+    todayOccasion: 'Comment sera votre journée ?',
+    notNow: 'Pas maintenant',
+    generateLook: 'Générer mon look',
+    looksGreat: 'Super !',
+    promptTemplate: 'Créer une tenue pour une journée {occasion}. Météo : {weather}',
+    noWeather: 'météo inconnue',
+  },
 };
 
 export type TranslationsFr = typeof translationsFr;
