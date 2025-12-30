@@ -446,6 +446,30 @@ export const translations = {
     moreCombinations: 'more combinations',
     ofWardrobe: 'of wardrobe',
   },
+
+  // Cost Per Wear Analytics
+  costPerWear: {
+    title: 'Cost Per Wear',
+    subtitle: 'Value analysis of your wardrobe',
+    bestValue: 'Best Value Items',
+    needsWear: 'Needs More Wear',
+    perWear: '/wear',
+    noPrice: 'No price',
+    addPrice: 'Add price',
+    priceLabel: 'Purchase price',
+    totalInvested: 'Total Invested',
+    avgCostPerWear: 'Avg Cost/Wear',
+    shopSimilar: 'Shop similar',
+  },
+
+  // Brand Suggestions
+  brandSuggestions: {
+    title: 'Recommended Shopping',
+    highEnd: 'High-End',
+    fastFashion: 'Fast Fashion',
+    seeMore: 'See more',
+    from: 'from',
+  },
 };
 
 export type Translations = typeof translations;

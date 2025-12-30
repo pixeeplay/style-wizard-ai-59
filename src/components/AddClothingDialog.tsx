@@ -172,6 +172,7 @@ export default function AddClothingDialog({ open, onOpenChange }: AddClothingDia
         brand: formData.brand || null,
         status: 'available',
         notes: null,
+        purchase_price: null,
       });
 
       toast({

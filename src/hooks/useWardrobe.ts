@@ -19,6 +19,7 @@ export interface WardrobeItem {
   last_worn_at: string | null;
   created_at: string;
   updated_at: string;
+  purchase_price: number | null;
 }
 
 export function useWardrobe() {

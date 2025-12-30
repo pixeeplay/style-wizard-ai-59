@@ -464,6 +464,30 @@ export const translationsFr = {
     moreCombinations: 'combinaisons de plus',
     ofWardrobe: 'de la garde-robe',
   },
+
+  // Cost Per Wear Analytics
+  costPerWear: {
+    title: 'Coût par Port',
+    subtitle: 'Analyse de la valeur de votre garde-robe',
+    bestValue: 'Meilleur Rapport Qualité-Prix',
+    needsWear: 'À Porter Plus Souvent',
+    perWear: '/port',
+    noPrice: 'Sans prix',
+    addPrice: 'Ajouter prix',
+    priceLabel: 'Prix d\'achat',
+    totalInvested: 'Total Investi',
+    avgCostPerWear: 'Coût Moyen/Port',
+    shopSimilar: 'Acheter similaire',
+  },
+
+  // Brand Suggestions
+  brandSuggestions: {
+    title: 'Shopping Recommandé',
+    highEnd: 'Haut de Gamme',
+    fastFashion: 'Fast Fashion',
+    seeMore: 'Voir plus',
+    from: 'à partir de',
+  },
 };
 
 export type TranslationsFr = typeof translationsFr;

@@ -25,6 +25,7 @@ import OutfitRecommendations from './OutfitRecommendations';
 import WeeklyPlanner from './WeeklyPlanner';
 import LaundryTracker from './LaundryTracker';
 import CapsuleWardrobe from './CapsuleWardrobe';
+import CostPerWearAnalytics from './CostPerWearAnalytics';
 
 type VisualizationStyle = 'flatlay' | 'mannequin' | 'editorial';
 // Color harmony rules
@@ -714,6 +715,9 @@ export default function StylistView() {
 
       {/* Wardrobe Analytics */}
       <WardrobeAnalytics />
+
+      {/* Cost Per Wear Analytics */}
+      <CostPerWearAnalytics />
 
       {/* Saved Outfits Gallery */}
       <OutfitGallery />

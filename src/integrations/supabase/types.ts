@@ -148,6 +148,7 @@ export type Database = {
           last_worn_at: string | null
           name: string | null
           notes: string | null
+          purchase_price: number | null
           season: Database["public"]["Enums"]["season"] | null
           secondary_color: string | null
           status: Database["public"]["Enums"]["clothing_status"] | null
@@ -166,6 +167,7 @@ export type Database = {
           last_worn_at?: string | null
           name?: string | null
           notes?: string | null
+          purchase_price?: number | null
           season?: Database["public"]["Enums"]["season"] | null
           secondary_color?: string | null
           status?: Database["public"]["Enums"]["clothing_status"] | null
@@ -184,6 +186,7 @@ export type Database = {
           last_worn_at?: string | null
           name?: string | null
           notes?: string | null
+          purchase_price?: number | null
           season?: Database["public"]["Enums"]["season"] | null
           secondary_color?: string | null
           status?: Database["public"]["Enums"]["clothing_status"] | null
