@@ -332,6 +332,21 @@ export const translations = {
     promptTemplate: 'Create an outfit for a {occasion} day. Weather: {weather}',
     noWeather: 'weather unknown',
   },
+
+  // Gallery & Calendar
+  gallery: {
+    allStyles: 'All styles',
+    shareText: 'Check out my SmartStyle look!',
+    linkCopied: 'Link copied!',
+    linkCopiedDesc: 'The link has been copied to your clipboard',
+  },
+
+  calendar: {
+    title: 'Outfit Calendar',
+    dragToSchedule: 'Drag a look from history to schedule it',
+    outfitsForDate: (count: number) => `${count} look${count > 1 ? 's' : ''} scheduled`,
+    scheduledFor: 'Scheduled for',
+  },
 };
 
 export type Translations = typeof translations;

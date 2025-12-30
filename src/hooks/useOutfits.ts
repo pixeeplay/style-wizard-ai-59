@@ -3,6 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
 
+export interface TryOnImages {
+  flatlay: string | null;
+  mannequin: string | null;
+  editorial: string | null;
+}
+
 export interface Outfit {
   id: string;
   user_id: string;
@@ -14,6 +20,8 @@ export interface Outfit {
   wear_count: number;
   last_worn_at: string | null;
   try_on_image_url: string | null;
+  try_on_images: TryOnImages | null;
+  scheduled_date: string | null;
   visualization_style: string | null;
   created_at: string;
 }
@@ -50,6 +58,13 @@ async function uploadTryOnImage({
   return urlData.publicUrl;
 }
 
+function mapDbOutfitToOutfit(data: any): Outfit {
+  return {
+    ...data,
+    try_on_images: data.try_on_images as TryOnImages | null,
+  };
+}
+
 export function useOutfits() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -71,7 +86,7 @@ export function useOutfits() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setOutfits((data as Outfit[]) || []);
+      setOutfits((data || []).map(mapDbOutfitToOutfit));
     } catch (error) {
       console.error('Error fetching outfits:', error);
     } finally {
@@ -109,8 +124,9 @@ export function useOutfits() {
 
         if (error) throw error;
 
-        setOutfits((prev) => [data as Outfit, ...prev]);
-        return data as Outfit;
+        const outfit = mapDbOutfitToOutfit(data);
+        setOutfits((prev) => [outfit, ...prev]);
+        return outfit;
       } catch (error) {
         console.error('Error creating outfit:', error);
         toast({
@@ -170,6 +186,62 @@ export function useOutfits() {
     }
   }, []);
 
+  // Update outfit with all 3 generated images
+  const updateOutfitImages = useCallback(
+    async (outfitId: string, images: TryOnImages, primaryStyle: keyof TryOnImages) => {
+      try {
+        const primaryImage = images[primaryStyle];
+        const { error } = await supabase
+          .from('outfits')
+          .update({
+            try_on_images: images as any,
+            try_on_image_url: primaryImage,
+            visualization_style: primaryStyle,
+          })
+          .eq('id', outfitId);
+
+        if (error) throw error;
+
+        setOutfits((prev) =>
+          prev.map((o) =>
+            o.id === outfitId
+              ? { ...o, try_on_images: images, try_on_image_url: primaryImage, visualization_style: primaryStyle }
+              : o
+          )
+        );
+      } catch (error) {
+        console.error('Error updating outfit images:', error);
+      }
+    },
+    []
+  );
+
+  // Schedule outfit to a specific date
+  const scheduleOutfit = useCallback(
+    async (outfitId: string, date: string) => {
+      try {
+        const { error } = await supabase
+          .from('outfits')
+          .update({ scheduled_date: date })
+          .eq('id', outfitId);
+
+        if (error) throw error;
+
+        setOutfits((prev) =>
+          prev.map((o) => (o.id === outfitId ? { ...o, scheduled_date: date } : o))
+        );
+
+        toast({
+          title: 'Look scheduled',
+          description: `Scheduled for ${date}`,
+        });
+      } catch (error) {
+        console.error('Error scheduling outfit:', error);
+      }
+    },
+    [toast]
+  );
+
   const favoriteOutfits = useMemo(() => outfits.filter((o) => o.is_favorite), [outfits]);
 
   return {
@@ -180,6 +252,8 @@ export function useOutfits() {
     saveOutfit,
     toggleFavorite,
     deleteOutfit,
+    updateOutfitImages,
+    scheduleOutfit,
     refetch: fetchOutfits,
   };
 }

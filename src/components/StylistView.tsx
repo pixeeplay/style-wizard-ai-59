@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useWardrobe, WardrobeItem } from '@/hooks/useWardrobe';
 import { useProfile } from '@/hooks/useProfile';
-import { useOutfits } from '@/hooks/useOutfits';
+import { useOutfits, TryOnImages } from '@/hooks/useOutfits';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -12,12 +12,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Sparkles, RefreshCw, Heart, Shirt, AlertCircle, Wand2, Loader2, Download, LayoutGrid, User, Camera, Check, Watch, Cloud, MapPin, Brain, Filter } from 'lucide-react';
+import { Sparkles, RefreshCw, Heart, Shirt, AlertCircle, Wand2, Loader2, Download, LayoutGrid, User, Camera, Check, Watch, Cloud, MapPin, Brain, Filter, Images } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import OutfitGallery from './OutfitGallery';
 import OutfitHistory from './OutfitHistory';
+import OutfitCalendar from './OutfitCalendar';
+import TryOnGallery from './TryOnGallery';
 
 type VisualizationStyle = 'flatlay' | 'mannequin' | 'editorial';
 // Color harmony rules
@@ -61,7 +63,7 @@ function areColorsCompatible(color1: string, color2: string): boolean {
 export default function StylistView() {
   const { availableItems } = useWardrobe();
   const { profile } = useProfile();
-  const { saveOutfit, createOutfit } = useOutfits();
+  const { saveOutfit, createOutfit, updateOutfitImages } = useOutfits();
   const { toast } = useToast();
   const { t } = useTranslation();
 
@@ -69,10 +71,25 @@ export default function StylistView() {
     top: null,
     bottom: null,
   });
+  const [currentOutfitId, setCurrentOutfitId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [generatingTryOn, setGeneratingTryOn] = useState(false);
   const [tryOnImage, setTryOnImage] = useState<string | null>(null);
   const [tryOnDialogOpen, setTryOnDialogOpen] = useState(false);
+
+  // Multi-style generation state
+  const [allStyleImages, setAllStyleImages] = useState<TryOnImages>({
+    flatlay: null,
+    mannequin: null,
+    editorial: null,
+  });
+  const [generatingStyles, setGeneratingStyles] = useState({
+    flatlay: false,
+    mannequin: false,
+    editorial: false,
+  });
+  const [primaryStyle, setPrimaryStyle] = useState<keyof TryOnImages>('mannequin');
+  const [generateAllMode, setGenerateAllMode] = useState(false);
 
   // Persisted UI preferences
   const [visualizationStyle, setVisualizationStyle] = useState<VisualizationStyle>(() => {
@@ -281,6 +298,73 @@ export default function StylistView() {
     }, 1000);
   };
 
+  // Generate a single style
+  const generateSingleStyle = async (style: VisualizationStyle): Promise<string | null> => {
+    if (!outfit.top || !outfit.bottom) return null;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('virtual-tryon', {
+        body: {
+          userAvatarUrl: profile?.avatar_url || null,
+          topImageUrl: outfit.top.image_url,
+          bottomImageUrl: outfit.bottom.image_url,
+          userDescription: profile?.morphology ? `Body type: ${profile.morphology}` : null,
+          visualizationStyle: style,
+          includeAccessories,
+          weather: weather || null,
+          city: city || null,
+        },
+      });
+
+      if (error) throw error;
+      return data?.imageUrl || null;
+    } catch (error) {
+      console.error(`Error generating ${style}:`, error);
+      return null;
+    }
+  };
+
+  // Generate all 3 styles in parallel
+  const generateAllStyles = async () => {
+    if (!outfit.top || !outfit.bottom) {
+      toast({
+        variant: 'destructive',
+        title: t.stylist.generateLookFirst,
+        description: t.stylist.clickGenerateBefore,
+      });
+      return;
+    }
+
+    setTryOnDialogOpen(true);
+    setGenerateAllMode(true);
+    setGeneratingStyles({ flatlay: true, mannequin: true, editorial: true });
+    setAllStyleImages({ flatlay: null, mannequin: null, editorial: null });
+
+    const styles: VisualizationStyle[] = ['flatlay', 'mannequin', 'editorial'];
+    
+    // Generate all styles in parallel
+    const results = await Promise.all(
+      styles.map(async (style) => {
+        const result = await generateSingleStyle(style);
+        setGeneratingStyles((prev) => ({ ...prev, [style]: false }));
+        setAllStyleImages((prev) => ({ ...prev, [style]: result }));
+        return { style, result };
+      })
+    );
+
+    // Set the first successful result as primary
+    const firstSuccess = results.find((r) => r.result);
+    if (firstSuccess) {
+      setPrimaryStyle(firstSuccess.style as keyof TryOnImages);
+      setTryOnImage(firstSuccess.result);
+    }
+
+    toast({
+      title: t.stylist.imageGenerated,
+      description: t.stylist.lookVisualized,
+    });
+  };
+
   const generateVirtualTryOn = async () => {
     if (!outfit.top || !outfit.bottom) {
       toast({
@@ -293,6 +377,7 @@ export default function StylistView() {
 
     setGeneratingTryOn(true);
     setTryOnDialogOpen(true);
+    setGenerateAllMode(false);
 
     try {
       const { data, error } = await supabase.functions.invoke('virtual-tryon', {
@@ -593,6 +678,9 @@ export default function StylistView() {
           <p className="text-sm text-muted-foreground">{t.stylist.bottomsAvailable}</p>
         </Card>
       </div>
+
+      {/* Outfit Calendar */}
+      <OutfitCalendar />
 
       {/* Outfit History */}
       <OutfitHistory onReplayOutfit={handleReplayOutfit} />

@@ -27,5 +27,5 @@ export function useTranslation() {
 
   const t = useMemo(() => (language === 'fr' ? translationsFr : translations), [language]);
 
-  return { t, language, setLanguage };
+  return { t, language, setLanguage, locale: language };
 }
