@@ -1,14 +1,14 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef, TouchEvent } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useOutfits, Outfit } from '@/hooks/useOutfits';
-import { useWardrobe, WardrobeItem } from '@/hooks/useWardrobe';
+import { useWardrobe } from '@/hooks/useWardrobe';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Calendar,
   ChevronLeft,
@@ -22,14 +22,21 @@ import {
   Loader2,
   Shirt,
   Plus,
+  CalendarDays,
 } from 'lucide-react';
 import {
   format,
   addDays,
   addWeeks,
   subWeeks,
+  addMonths,
+  subMonths,
   startOfWeek,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
   isSameDay,
+  isSameMonth,
   isToday,
 } from 'date-fns';
 import { fr, enUS } from 'date-fns/locale';
@@ -51,18 +58,27 @@ interface WeatherData {
   dailyForecasts: DayForecast[];
 }
 
+type ViewMode = 'week' | 'month';
+
 export default function WeeklyPlanner() {
   const { t, locale } = useTranslation();
   const { outfits, scheduleOutfit } = useOutfits();
   const { items, availableItems } = useWardrobe();
 
+  const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [currentWeekStart, setCurrentWeekStart] = useState(() =>
     startOfWeek(new Date(), { weekStartsOn: 1 })
   );
+  const [currentMonth, setCurrentMonth] = useState(() => new Date());
   const [city, setCity] = useState(() => localStorage.getItem('smartstyle.city') || '');
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [fetchingWeather, setFetchingWeather] = useState(false);
   const [dragOverDate, setDragOverDate] = useState<string | null>(null);
+
+  // Swipe gesture handling
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const dateLocale = locale === 'fr' ? fr : enUS;
 
@@ -70,6 +86,15 @@ export default function WeeklyPlanner() {
   const weekDays = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
   }, [currentWeekStart]);
+
+  // Get days for month view
+  const monthDays = useMemo(() => {
+    const start = startOfMonth(currentMonth);
+    const end = endOfMonth(currentMonth);
+    const startWeek = startOfWeek(start, { weekStartsOn: 1 });
+    const endWeek = addDays(startOfWeek(end, { weekStartsOn: 1 }), 6);
+    return eachDayOfInterval({ start: startWeek, end: endWeek });
+  }, [currentMonth]);
 
   // Group outfits by scheduled_date
   const outfitsByDate = useMemo(() => {
@@ -120,6 +145,38 @@ export default function WeeklyPlanner() {
 
   const handlePrevWeek = () => setCurrentWeekStart(subWeeks(currentWeekStart, 1));
   const handleNextWeek = () => setCurrentWeekStart(addWeeks(currentWeekStart, 1));
+  const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+  const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
+
+  const handlePrev = () => (viewMode === 'week' ? handlePrevWeek() : handlePrevMonth());
+  const handleNext = () => (viewMode === 'week' ? handleNextWeek() : handleNextMonth());
+
+  // Swipe gesture handlers
+  const handleTouchStart = (e: TouchEvent) => {
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX.current === null || touchEndX.current === null) return;
+    
+    const diff = touchStartX.current - touchEndX.current;
+    const minSwipeDistance = 50;
+
+    if (Math.abs(diff) > minSwipeDistance) {
+      if (diff > 0) {
+        handleNext(); // Swipe left = next
+      } else {
+        handlePrev(); // Swipe right = prev
+      }
+    }
+
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
 
   const handleDragOver = (e: React.DragEvent, date: Date) => {
     e.preventDefault();
@@ -160,23 +217,40 @@ export default function WeeklyPlanner() {
 
   return (
     <Card className="p-4 space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h3 className="font-semibold flex items-center gap-2">
           <Calendar className="w-4 h-4 text-primary" />
-          {t.planner.title}
+          {viewMode === 'week' ? t.planner.title : t.planner.monthlyTitle}
         </h3>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={handlePrevWeek}>
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <span className="text-sm font-medium min-w-[120px] text-center">
-            {format(currentWeekStart, 'MMM d', { locale: dateLocale })} -{' '}
-            {format(addDays(currentWeekStart, 6), 'MMM d, yyyy', { locale: dateLocale })}
-          </span>
-          <Button variant="ghost" size="icon" onClick={handleNextWeek}>
-            <ChevronRight className="w-4 h-4" />
-          </Button>
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+            <TabsList className="h-8">
+              <TabsTrigger value="week" className="text-xs px-2 h-6 gap-1">
+                <Calendar className="w-3 h-3" />
+                {t.planner.week}
+              </TabsTrigger>
+              <TabsTrigger value="month" className="text-xs px-2 h-6 gap-1">
+                <CalendarDays className="w-3 h-3" />
+                {t.planner.month}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
+      </div>
+
+      {/* Navigation */}
+      <div className="flex items-center justify-center gap-2">
+        <Button variant="ghost" size="icon" onClick={handlePrev}>
+          <ChevronLeft className="w-4 h-4" />
+        </Button>
+        <span className="text-sm font-medium min-w-[140px] text-center">
+          {viewMode === 'week'
+            ? `${format(currentWeekStart, 'MMM d', { locale: dateLocale })} - ${format(addDays(currentWeekStart, 6), 'MMM d, yyyy', { locale: dateLocale })}`
+            : format(currentMonth, 'MMMM yyyy', { locale: dateLocale })}
+        </span>
+        <Button variant="ghost" size="icon" onClick={handleNext}>
+          <ChevronRight className="w-4 h-4" />
+        </Button>
       </div>
 
       {/* City input for weather */}
@@ -191,90 +265,158 @@ export default function WeeklyPlanner() {
         {fetchingWeather && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
       </div>
 
-      {/* Week grid */}
-      <ScrollArea className="w-full">
-        <div className="flex gap-3 min-w-[700px] pb-3">
-          {weekDays.map((day) => {
-            const dateKey = format(day, 'yyyy-MM-dd');
-            const dayOutfits = outfitsByDate[dateKey] || [];
-            const forecast = getDayForecast(day);
-            const isDragOver = dragOverDate === dateKey;
-            const isCurrentDay = isToday(day);
-            const WeatherIcon = forecast ? getWeatherIcon(forecast.condition) : null;
+      {/* Calendar grid with swipe support */}
+      <div
+        ref={containerRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {viewMode === 'week' ? (
+          <ScrollArea className="w-full">
+            <div className="flex gap-3 min-w-[700px] pb-3">
+              {weekDays.map((day) => {
+                const dateKey = format(day, 'yyyy-MM-dd');
+                const dayOutfits = outfitsByDate[dateKey] || [];
+                const forecast = getDayForecast(day);
+                const isDragOver = dragOverDate === dateKey;
+                const isCurrentDay = isToday(day);
+                const WeatherIcon = forecast ? getWeatherIcon(forecast.condition) : null;
 
-            return (
-              <div
-                key={dateKey}
-                className={`flex-1 min-w-[90px] rounded-lg border p-2 transition-all ${
-                  isDragOver ? 'ring-2 ring-primary bg-primary/10' : ''
-                } ${isCurrentDay ? 'border-primary bg-primary/5' : 'border-border'}`}
-                onDragOver={(e) => handleDragOver(e, day)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, day)}
-              >
-                {/* Day header */}
-                <div className="text-center mb-2">
-                  <p className={`text-xs font-medium ${isCurrentDay ? 'text-primary' : 'text-muted-foreground'}`}>
-                    {format(day, 'EEE', { locale: dateLocale })}
-                  </p>
-                  <p className={`text-lg font-bold ${isCurrentDay ? 'text-primary' : ''}`}>
-                    {format(day, 'd')}
-                  </p>
-                </div>
-
-                {/* Weather forecast */}
-                {forecast && (
-                  <div className="flex items-center justify-center gap-1 mb-2 text-xs text-muted-foreground">
-                    {WeatherIcon && <WeatherIcon className="w-3 h-3" />}
-                    <span>{Math.round(forecast.avgTemp)}°</span>
-                  </div>
-                )}
-
-                {/* Outfit preview */}
-                <div className="aspect-square bg-muted/50 rounded-md flex items-center justify-center overflow-hidden">
-                  {dayOutfits.length > 0 ? (
-                    dayOutfits[0].try_on_image_url ? (
-                      <img
-                        src={dayOutfits[0].try_on_image_url}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    ) : dayOutfits[0].items[0] ? (
-                      <div className="flex -space-x-1">
-                        {dayOutfits[0].items.slice(0, 2).map((itemId) => (
-                          <img
-                            key={itemId}
-                            src={getItemImage(itemId) || ''}
-                            alt=""
-                            className="w-8 h-8 rounded-full object-cover border-2 border-background"
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <Badge variant="secondary" className="text-[10px]">
-                        {dayOutfits.length}
-                      </Badge>
-                    )
-                  ) : (
-                    <div className="text-muted-foreground flex flex-col items-center gap-1">
-                      <Plus className="w-4 h-4" />
-                      <span className="text-[10px]">{t.planner.dropHere}</span>
+                return (
+                  <div
+                    key={dateKey}
+                    className={`flex-1 min-w-[90px] rounded-lg border p-2 transition-all ${
+                      isDragOver ? 'ring-2 ring-primary bg-primary/10' : ''
+                    } ${isCurrentDay ? 'border-primary bg-primary/5' : 'border-border'}`}
+                    onDragOver={(e) => handleDragOver(e, day)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, day)}
+                  >
+                    {/* Day header */}
+                    <div className="text-center mb-2">
+                      <p className={`text-xs font-medium ${isCurrentDay ? 'text-primary' : 'text-muted-foreground'}`}>
+                        {format(day, 'EEE', { locale: dateLocale })}
+                      </p>
+                      <p className={`text-lg font-bold ${isCurrentDay ? 'text-primary' : ''}`}>
+                        {format(day, 'd')}
+                      </p>
                     </div>
-                  )}
-                </div>
 
-                {/* Outfit count */}
-                {dayOutfits.length > 1 && (
-                  <Badge variant="secondary" className="w-full justify-center mt-1 text-[10px]">
-                    +{dayOutfits.length - 1} {t.planner.more}
-                  </Badge>
-                )}
-              </div>
-            );
-          })}
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+                    {/* Weather forecast */}
+                    {forecast && (
+                      <div className="flex items-center justify-center gap-1 mb-2 text-xs text-muted-foreground">
+                        {WeatherIcon && <WeatherIcon className="w-3 h-3" />}
+                        <span>{Math.round(forecast.avgTemp)}°</span>
+                      </div>
+                    )}
+
+                    {/* Outfit preview */}
+                    <div className="aspect-square bg-muted/50 rounded-md flex items-center justify-center overflow-hidden">
+                      {dayOutfits.length > 0 ? (
+                        dayOutfits[0].try_on_image_url ? (
+                          <img
+                            src={dayOutfits[0].try_on_image_url}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        ) : dayOutfits[0].items[0] ? (
+                          <div className="flex -space-x-1">
+                            {dayOutfits[0].items.slice(0, 2).map((itemId) => (
+                              <img
+                                key={itemId}
+                                src={getItemImage(itemId) || ''}
+                                alt=""
+                                className="w-8 h-8 rounded-full object-cover border-2 border-background"
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <Badge variant="secondary" className="text-[10px]">
+                            {dayOutfits.length}
+                          </Badge>
+                        )
+                      ) : (
+                        <div className="text-muted-foreground flex flex-col items-center gap-1">
+                          <Plus className="w-4 h-4" />
+                          <span className="text-[10px]">{t.planner.dropHere}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Outfit count */}
+                    {dayOutfits.length > 1 && (
+                      <Badge variant="secondary" className="w-full justify-center mt-1 text-[10px]">
+                        +{dayOutfits.length - 1} {t.planner.more}
+                      </Badge>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        ) : (
+          /* Month view */
+          <div className="space-y-2">
+            {/* Weekday headers */}
+            <div className="grid grid-cols-7 gap-1">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, i) => (
+                <div key={day} className="text-center text-xs font-medium text-muted-foreground py-1">
+                  {format(addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), i), 'EEE', { locale: dateLocale })}
+                </div>
+              ))}
+            </div>
+            {/* Days grid */}
+            <div className="grid grid-cols-7 gap-1">
+              {monthDays.map((day) => {
+                const dateKey = format(day, 'yyyy-MM-dd');
+                const dayOutfits = outfitsByDate[dateKey] || [];
+                const isDragOver = dragOverDate === dateKey;
+                const isCurrentDay = isToday(day);
+                const isCurrentMonth = isSameMonth(day, currentMonth);
+
+                return (
+                  <div
+                    key={dateKey}
+                    className={`aspect-square rounded-md border p-1 transition-all flex flex-col items-center justify-center ${
+                      isDragOver ? 'ring-2 ring-primary bg-primary/10' : ''
+                    } ${isCurrentDay ? 'border-primary bg-primary/5' : 'border-border'} ${
+                      !isCurrentMonth ? 'opacity-30' : ''
+                    }`}
+                    onDragOver={(e) => handleDragOver(e, day)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, day)}
+                  >
+                    <span className={`text-xs font-medium ${isCurrentDay ? 'text-primary' : ''}`}>
+                      {format(day, 'd')}
+                    </span>
+                    {dayOutfits.length > 0 && (
+                      <div className="w-5 h-5 mt-0.5 rounded-full overflow-hidden bg-muted">
+                        {dayOutfits[0].try_on_image_url ? (
+                          <img
+                            src={dayOutfits[0].try_on_image_url}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-[8px] text-muted-foreground">
+                            {dayOutfits.length}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <p className="text-xs text-muted-foreground text-center">
+        {t.planner.swipeHint}
+      </p>
 
       {/* Available items reminder */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground">

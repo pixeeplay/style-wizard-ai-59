@@ -421,12 +421,16 @@ export const translationsFr = {
   // Weekly Planner
   planner: {
     title: 'Planning hebdomadaire',
+    monthlyTitle: 'Planning mensuel',
+    week: 'Semaine',
+    month: 'Mois',
     enterCity: 'Ville pour la météo...',
     dropHere: 'Déposer',
     more: 'de plus',
     itemsAvailable: 'articles disponibles',
     inLaundry: 'au lavage',
     dragInstruction: 'Glissez des looks depuis l\'historique pour les planifier',
+    swipeHint: 'Glissez gauche/droite pour naviguer',
   },
 
   // Laundry Tracker
@@ -440,6 +444,10 @@ export const translationsFr = {
     allClean: 'Tous vos vêtements sont propres !',
     clean: 'propres',
     reminder: 'C\'est le moment de faire une lessive ?',
+    smartSuggestions: 'Suggérés pour le lavage',
+    wornTimes: (count: number) => `Porté ${count}× depuis lavage`,
+    needsFreshening: 'Peut avoir besoin d\'un rafraîchissement',
+    wash: 'Laver',
   },
 };
 

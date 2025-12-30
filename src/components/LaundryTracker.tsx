@@ -10,8 +10,9 @@ import {
   Shirt,
   Check,
   AlertTriangle,
-  ArrowRight,
+  Sparkles,
 } from 'lucide-react';
+import { differenceInDays } from 'date-fns';
 
 export default function LaundryTracker() {
   const { t } = useTranslation();
@@ -45,6 +46,29 @@ export default function LaundryTracker() {
     return categories;
   }, [items, availableItems, laundryItems]);
 
+  // Smart laundry suggestions - items that should be washed based on wear count and time
+  const smartSuggestions = useMemo(() => {
+    const suggestions: { item: WardrobeItem; reason: 'wearCount' | 'daysSinceWash' }[] = [];
+    
+    availableItems.forEach((item) => {
+      const wearCount = item.wear_count || 0;
+      const lastWorn = item.last_worn_at ? new Date(item.last_worn_at) : null;
+      const daysSinceWorn = lastWorn ? differenceInDays(new Date(), lastWorn) : null;
+      
+      // Suggest washing if worn 3+ times without washing
+      if (wearCount >= 3) {
+        suggestions.push({ item, reason: 'wearCount' });
+      }
+      // Or if worn recently but over a week ago (might need freshening)
+      else if (daysSinceWorn !== null && daysSinceWorn >= 7 && wearCount >= 1) {
+        suggestions.push({ item, reason: 'daysSinceWash' });
+      }
+    });
+
+    // Sort by wear count descending
+    return suggestions.sort((a, b) => (b.item.wear_count || 0) - (a.item.wear_count || 0)).slice(0, 5);
+  }, [availableItems]);
+
   const handleMarkClean = async (itemId: string) => {
     await toggleLaundry(itemId);
   };
@@ -64,6 +88,51 @@ export default function LaundryTracker() {
           {laundryItems.length} {t.laundry.inLaundry}
         </Badge>
       </div>
+
+      {/* Smart laundry suggestions */}
+      {smartSuggestions.length > 0 && (
+        <div className="space-y-2 border-b pb-3">
+          <p className="text-xs font-medium text-primary flex items-center gap-1">
+            <Sparkles className="w-3 h-3" />
+            {t.laundry.smartSuggestions}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {smartSuggestions.map(({ item, reason }) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-2 bg-primary/10 rounded-lg p-2 pr-3"
+              >
+                <div className="w-8 h-8 rounded-md overflow-hidden bg-muted">
+                  <img
+                    src={item.image_url}
+                    alt={item.name || ''}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium truncate">
+                    {item.name || t.categoryLabels[item.category as keyof typeof t.categoryLabels]}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {reason === 'wearCount'
+                      ? t.laundry.wornTimes(item.wear_count || 0)
+                      : t.laundry.needsFreshening}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-2 text-xs gap-1"
+                  onClick={() => toggleLaundry(item.id)}
+                >
+                  <WashingMachine className="w-3 h-3" />
+                  {t.laundry.wash}
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Low stock warnings */}
       {lowStockCategories.length > 0 && (
