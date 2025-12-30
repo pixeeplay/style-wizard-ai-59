@@ -429,8 +429,9 @@ export const translationsFr = {
     more: 'de plus',
     itemsAvailable: 'articles disponibles',
     inLaundry: 'au lavage',
-    dragInstruction: 'Glissez des looks depuis l\'historique pour les planifier',
+    dragInstruction: 'Glissez un look ci-dessous pour le planifier',
     swipeHint: 'Glissez gauche/droite pour naviguer',
+    dragOutfits: 'Glissez un look pour le planifier',
   },
 
   // Laundry Tracker

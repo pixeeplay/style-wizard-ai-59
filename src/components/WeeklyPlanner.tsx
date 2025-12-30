@@ -23,6 +23,7 @@ import {
   Shirt,
   Plus,
   CalendarDays,
+  GripVertical,
 } from 'lucide-react';
 import {
   format,
@@ -417,6 +418,57 @@ export default function WeeklyPlanner() {
       <p className="text-xs text-muted-foreground text-center">
         {t.planner.swipeHint}
       </p>
+
+      {/* Draggable outfits section */}
+      {outfits.length > 0 && (
+        <div className="space-y-2 border-t pt-3">
+          <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <GripVertical className="w-3 h-3" />
+            {t.planner.dragOutfits}
+          </p>
+          <ScrollArea className="w-full">
+            <div className="flex gap-2 pb-2">
+              {outfits.slice(0, 10).map((outfit) => (
+                <div
+                  key={outfit.id}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('outfitId', outfit.id);
+                    e.dataTransfer.effectAllowed = 'move';
+                  }}
+                  className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-muted cursor-grab active:cursor-grabbing border-2 border-transparent hover:border-primary/50 transition-all hover:scale-105"
+                  title={outfit.name || 'Look'}
+                >
+                  {outfit.try_on_image_url ? (
+                    <img
+                      src={outfit.try_on_image_url}
+                      alt={outfit.name || 'Look'}
+                      className="w-full h-full object-cover pointer-events-none"
+                    />
+                  ) : (
+                    <div className="w-full h-full grid grid-cols-2 gap-0.5 pointer-events-none">
+                      {outfit.items.slice(0, 2).map((itemId, idx) => {
+                        const itemImg = getItemImage(itemId);
+                        return itemImg ? (
+                          <img
+                            key={idx}
+                            src={itemImg}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div key={idx} className="bg-muted-foreground/20" />
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        </div>
+      )}
 
       {/* Available items reminder */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
