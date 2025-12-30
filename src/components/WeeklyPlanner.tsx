@@ -75,6 +75,7 @@ export default function WeeklyPlanner() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [fetchingWeather, setFetchingWeather] = useState(false);
   const [dragOverDate, setDragOverDate] = useState<string | null>(null);
+  const [selectedOutfitId, setSelectedOutfitId] = useState<string | null>(null);
 
   // Swipe gesture handling
   const touchStartX = useRef<number | null>(null);
@@ -197,6 +198,18 @@ export default function WeeklyPlanner() {
     }
   };
 
+  // Tap-to-schedule for mobile
+  const handleDayClick = async (date: Date) => {
+    if (selectedOutfitId) {
+      await scheduleOutfit(selectedOutfitId, format(date, 'yyyy-MM-dd'));
+      setSelectedOutfitId(null);
+    }
+  };
+
+  const handleOutfitSelect = (outfitId: string) => {
+    setSelectedOutfitId(selectedOutfitId === outfitId ? null : outfitId);
+  };
+
   const getWeatherIcon = (condition: string) => {
     const lower = condition.toLowerCase();
     if (lower.includes('rain') || lower.includes('pluie')) return CloudRain;
@@ -287,12 +300,15 @@ export default function WeeklyPlanner() {
                 return (
                   <div
                     key={dateKey}
-                    className={`flex-1 min-w-[90px] rounded-lg border p-2 transition-all ${
+                    className={`flex-1 min-w-[90px] rounded-lg border p-2 transition-all cursor-pointer ${
                       isDragOver ? 'ring-2 ring-primary bg-primary/10' : ''
-                    } ${isCurrentDay ? 'border-primary bg-primary/5' : 'border-border'}`}
+                    } ${selectedOutfitId ? 'hover:ring-2 hover:ring-primary hover:bg-primary/10' : ''} ${
+                      isCurrentDay ? 'border-primary bg-primary/5' : 'border-border'
+                    }`}
                     onDragOver={(e) => handleDragOver(e, day)}
                     onDragLeave={handleDragLeave}
                     onDrop={(e) => handleDrop(e, day)}
+                    onClick={() => handleDayClick(day)}
                   >
                     {/* Day header */}
                     <div className="text-center mb-2">
@@ -380,14 +396,15 @@ export default function WeeklyPlanner() {
                 return (
                   <div
                     key={dateKey}
-                    className={`aspect-square rounded-md border p-1 transition-all flex flex-col items-center justify-center ${
+                    className={`aspect-square rounded-md border p-1 transition-all flex flex-col items-center justify-center cursor-pointer ${
                       isDragOver ? 'ring-2 ring-primary bg-primary/10' : ''
-                    } ${isCurrentDay ? 'border-primary bg-primary/5' : 'border-border'} ${
-                      !isCurrentMonth ? 'opacity-30' : ''
-                    }`}
+                    } ${selectedOutfitId ? 'hover:ring-2 hover:ring-primary hover:bg-primary/10' : ''} ${
+                      isCurrentDay ? 'border-primary bg-primary/5' : 'border-border'
+                    } ${!isCurrentMonth ? 'opacity-30' : ''}`}
                     onDragOver={(e) => handleDragOver(e, day)}
                     onDragLeave={handleDragLeave}
                     onDrop={(e) => handleDrop(e, day)}
+                    onClick={() => handleDayClick(day)}
                   >
                     <span className={`text-xs font-medium ${isCurrentDay ? 'text-primary' : ''}`}>
                       {format(day, 'd')}
@@ -419,54 +436,70 @@ export default function WeeklyPlanner() {
         {t.planner.swipeHint}
       </p>
 
-      {/* Draggable outfits section */}
+      {/* Draggable/Tappable outfits section */}
       {outfits.length > 0 && (
         <div className="space-y-2 border-t pt-3">
           <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
             <GripVertical className="w-3 h-3" />
-            {t.planner.dragOutfits}
+            {selectedOutfitId ? t.planner.tapDay : t.planner.selectOutfit}
           </p>
           <ScrollArea className="w-full">
             <div className="flex gap-2 pb-2">
-              {outfits.slice(0, 10).map((outfit) => (
-                <div
-                  key={outfit.id}
-                  draggable
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData('outfitId', outfit.id);
-                    e.dataTransfer.effectAllowed = 'move';
-                  }}
-                  className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-muted cursor-grab active:cursor-grabbing border-2 border-transparent hover:border-primary/50 transition-all hover:scale-105"
-                  title={outfit.name || 'Look'}
-                >
-                  {outfit.try_on_image_url ? (
-                    <img
-                      src={outfit.try_on_image_url}
-                      alt={outfit.name || 'Look'}
-                      className="w-full h-full object-cover pointer-events-none"
-                    />
-                  ) : (
-                    <div className="w-full h-full grid grid-cols-2 gap-0.5 pointer-events-none">
-                      {outfit.items.slice(0, 2).map((itemId, idx) => {
-                        const itemImg = getItemImage(itemId);
-                        return itemImg ? (
-                          <img
-                            key={idx}
-                            src={itemImg}
-                            alt=""
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div key={idx} className="bg-muted-foreground/20" />
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              ))}
+              {outfits.slice(0, 10).map((outfit) => {
+                const isSelected = selectedOutfitId === outfit.id;
+                return (
+                  <div
+                    key={outfit.id}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('outfitId', outfit.id);
+                      e.dataTransfer.effectAllowed = 'move';
+                    }}
+                    onClick={() => handleOutfitSelect(outfit.id)}
+                    className={`flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-muted cursor-pointer border-2 transition-all hover:scale-105 ${
+                      isSelected ? 'border-primary ring-2 ring-primary/50 scale-110' : 'border-transparent hover:border-primary/50'
+                    }`}
+                    title={outfit.name || 'Look'}
+                  >
+                    {outfit.try_on_image_url ? (
+                      <img
+                        src={outfit.try_on_image_url}
+                        alt={outfit.name || 'Look'}
+                        className="w-full h-full object-cover pointer-events-none"
+                      />
+                    ) : (
+                      <div className="w-full h-full grid grid-cols-2 gap-0.5 pointer-events-none">
+                        {outfit.items.slice(0, 2).map((itemId, idx) => {
+                          const itemImg = getItemImage(itemId);
+                          return itemImg ? (
+                            <img
+                              key={idx}
+                              src={itemImg}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div key={idx} className="bg-muted-foreground/20" />
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             <ScrollBar orientation="horizontal" />
           </ScrollArea>
+          {selectedOutfitId && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-xs"
+              onClick={() => setSelectedOutfitId(null)}
+            >
+              {t.common.cancel}
+            </Button>
+          )}
         </div>
       )}
 
