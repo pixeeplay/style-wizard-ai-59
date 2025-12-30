@@ -411,8 +411,9 @@ export const translations = {
     more: 'more',
     itemsAvailable: 'items available',
     inLaundry: 'in laundry',
-    dragInstruction: 'Drag outfits from history to schedule them',
+    dragInstruction: 'Drag outfits from below to schedule them',
     swipeHint: 'Swipe left/right to navigate',
+    dragOutfits: 'Drag a look to schedule it',
   },
 
   // Laundry Tracker
