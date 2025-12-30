@@ -417,6 +417,30 @@ export const translationsFr = {
     weeksAgo: (weeks: number) => `Il y a ${weeks} semaine${weeks > 1 ? 's' : ''}`,
     monthsAgo: (months: number) => `Il y a ${months} mois`,
   },
+
+  // Weekly Planner
+  planner: {
+    title: 'Planning hebdomadaire',
+    enterCity: 'Ville pour la météo...',
+    dropHere: 'Déposer',
+    more: 'de plus',
+    itemsAvailable: 'articles disponibles',
+    inLaundry: 'au lavage',
+    dragInstruction: 'Glissez des looks depuis l\'historique pour les planifier',
+  },
+
+  // Laundry Tracker
+  laundry: {
+    title: 'Suivi du linge',
+    inLaundry: 'au lavage',
+    runningLow: 'Attention, vous manquez de vêtements propres !',
+    available: 'propres',
+    dirty: 'sales',
+    markClean: 'Propre',
+    allClean: 'Tous vos vêtements sont propres !',
+    clean: 'propres',
+    reminder: 'C\'est le moment de faire une lessive ?',
+  },
 };
 
 export type TranslationsFr = typeof translationsFr;
