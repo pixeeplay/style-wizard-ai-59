@@ -399,6 +399,30 @@ export const translations = {
     weeksAgo: (weeks: number) => `${weeks} week${weeks > 1 ? 's' : ''} ago`,
     monthsAgo: (months: number) => `${months} month${months > 1 ? 's' : ''} ago`,
   },
+
+  // Weekly Planner
+  planner: {
+    title: 'Weekly Planner',
+    enterCity: 'Enter city for weather...',
+    dropHere: 'Drop',
+    more: 'more',
+    itemsAvailable: 'items available',
+    inLaundry: 'in laundry',
+    dragInstruction: 'Drag outfits from history to schedule them',
+  },
+
+  // Laundry Tracker
+  laundry: {
+    title: 'Laundry Tracker',
+    inLaundry: 'in laundry',
+    runningLow: 'Running low on clean items!',
+    available: 'clean',
+    dirty: 'dirty',
+    markClean: 'Clean',
+    allClean: 'All items are clean!',
+    clean: 'clean',
+    reminder: 'Time to do laundry?',
+  },
 };
 
 export type Translations = typeof translations;

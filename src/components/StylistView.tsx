@@ -22,6 +22,8 @@ import OutfitCalendar from './OutfitCalendar';
 import TryOnGallery from './TryOnGallery';
 import WardrobeAnalytics from './WardrobeAnalytics';
 import OutfitRecommendations from './OutfitRecommendations';
+import WeeklyPlanner from './WeeklyPlanner';
+import LaundryTracker from './LaundryTracker';
 
 type VisualizationStyle = 'flatlay' | 'mannequin' | 'editorial';
 // Color harmony rules
@@ -691,8 +693,14 @@ export default function StylistView() {
         </Card>
       </div>
 
+      {/* Laundry Tracker */}
+      <LaundryTracker />
+
       {/* Outfit Recommendations */}
       <OutfitRecommendations onSelectOutfit={handleReplayOutfit} />
+
+      {/* Weekly Planner */}
+      <WeeklyPlanner />
 
       {/* Outfit Calendar */}
       <OutfitCalendar />
