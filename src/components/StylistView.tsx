@@ -20,6 +20,8 @@ import OutfitGallery from './OutfitGallery';
 import OutfitHistory from './OutfitHistory';
 import OutfitCalendar from './OutfitCalendar';
 import TryOnGallery from './TryOnGallery';
+import WardrobeAnalytics from './WardrobeAnalytics';
+import OutfitRecommendations from './OutfitRecommendations';
 
 type VisualizationStyle = 'flatlay' | 'mannequin' | 'editorial';
 // Color harmony rules
@@ -689,11 +691,17 @@ export default function StylistView() {
         </Card>
       </div>
 
+      {/* Outfit Recommendations */}
+      <OutfitRecommendations onSelectOutfit={handleReplayOutfit} />
+
       {/* Outfit Calendar */}
       <OutfitCalendar />
 
       {/* Outfit History */}
       <OutfitHistory onReplayOutfit={handleReplayOutfit} />
+
+      {/* Wardrobe Analytics */}
+      <WardrobeAnalytics />
 
       {/* Saved Outfits Gallery */}
       <OutfitGallery />
