@@ -592,11 +592,11 @@ export default function StylistView() {
             )}
           </div>
 
-          {/* Virtual Try-On Button */}
+        <div className="flex gap-2">
           <Button
             onClick={generateVirtualTryOn}
-            className="w-full gold-gradient text-primary-foreground"
-            disabled={generatingTryOn}
+            className="flex-1 gold-gradient text-primary-foreground"
+            disabled={!outfit.top || !outfit.bottom || generatingTryOn}
           >
             {generatingTryOn ? (
               <>
@@ -610,6 +610,16 @@ export default function StylistView() {
               </>
             )}
           </Button>
+          <Button
+            onClick={generateAllStyles}
+            variant="outline"
+            className="gap-2"
+            disabled={!outfit.top || !outfit.bottom || generatingStyles.flatlay || generatingStyles.mannequin || generatingStyles.editorial}
+          >
+            <Images className="w-4 h-4" />
+            <span className="hidden sm:inline">3 styles</span>
+          </Button>
+        </div>
 
           <div className="flex gap-3">
             <Button
@@ -754,7 +764,19 @@ export default function StylistView() {
                 : t.stylist.accessoriesOff}
             </p>
 
-            {generatingTryOn ? (
+            {generateAllMode ? (
+              <TryOnGallery
+                images={allStyleImages}
+                generating={generatingStyles}
+                onSelectPrimary={(style) => {
+                  setPrimaryStyle(style);
+                  if (allStyleImages[style]) {
+                    setTryOnImage(allStyleImages[style]);
+                  }
+                }}
+                primaryStyle={primaryStyle}
+              />
+            ) : generatingTryOn ? (
               <div className="aspect-square bg-muted rounded-xl flex flex-col items-center justify-center">
                 <div className="relative">
                   <div className="w-20 h-20 rounded-full gold-gradient animate-pulse" />

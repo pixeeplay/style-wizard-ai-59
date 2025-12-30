@@ -357,6 +357,8 @@ export const translationsFr = {
     shareText: 'Découvrez mon look SmartStyle !',
     linkCopied: 'Lien copié !',
     linkCopiedDesc: 'Le lien a été copié dans le presse-papiers',
+    generate3Styles: 'Générer 3 styles',
+    generating3Styles: 'Génération des 3 styles...',
   },
 
   calendar: {
@@ -364,6 +366,7 @@ export const translationsFr = {
     dragToSchedule: 'Glissez un look depuis l\'historique pour le planifier',
     outfitsForDate: (count: number) => `${count} look${count > 1 ? 's' : ''} planifié${count > 1 ? 's' : ''}`,
     scheduledFor: 'Planifié pour le',
+    dropHere: 'Déposez ici pour planifier',
   },
 };
 
