@@ -318,6 +318,20 @@ export const translations = {
     style: 'Style',
     clearFilters: 'Clear filters',
   },
+
+  // Outfit of the Day
+  ootd: {
+    title: 'Outfit of the Day',
+    description: 'Get a personalized outfit suggestion based on weather and your plans',
+    yourLookReady: 'Your look for today is ready!',
+    yourCity: 'Your city',
+    todayOccasion: "What's your day like?",
+    notNow: 'Not now',
+    generateLook: 'Generate my look',
+    looksGreat: 'Looks great!',
+    promptTemplate: 'Create an outfit for a {occasion} day. Weather: {weather}',
+    noWeather: 'weather unknown',
+  },
 };
 
 export type Translations = typeof translations;

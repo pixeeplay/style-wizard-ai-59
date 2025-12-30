@@ -27,6 +27,7 @@ import AddClothingDialog from '@/components/AddClothingDialog';
 import StylistView from '@/components/StylistView';
 import TravelView from '@/components/TravelView';
 import WardrobeFiltersComponent, { WardrobeFilters } from '@/components/WardrobeFilters';
+import OutfitOfTheDay from '@/components/OutfitOfTheDay';
 
 type Tab = 'wardrobe' | 'stylist' | 'travel' | 'profile';
 
@@ -76,6 +77,8 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      {/* Outfit of the Day notification */}
+      <OutfitOfTheDay />
       {/* Header */}
       <header className="sticky top-0 z-40 glass border-b border-border/50 px-4 py-3">
         <div className="flex items-center justify-between max-w-lg mx-auto">
