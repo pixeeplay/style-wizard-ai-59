@@ -359,6 +359,12 @@ export const translationsFr = {
     linkCopiedDesc: 'Le lien a été copié dans le presse-papiers',
     generate3Styles: 'Générer 3 styles',
     generating3Styles: 'Génération des 3 styles...',
+    instagramCaption: 'Tenue du jour stylisée avec SmartStyle AI ✨',
+    pinterestCaption: 'Inspiration outfit',
+    instagramReady: 'Prêt pour Instagram !',
+    instagramReadyDesc: 'Image téléchargée & légende copiée',
+    shareOther: 'Partager...',
+    copyLink: 'Copier le lien',
   },
 
   calendar: {
@@ -367,6 +373,17 @@ export const translationsFr = {
     outfitsForDate: (count: number) => `${count} look${count > 1 ? 's' : ''} planifié${count > 1 ? 's' : ''}`,
     scheduledFor: 'Planifié pour le',
     dropHere: 'Déposez ici pour planifier',
+  },
+
+  // Wear tracking
+  wearTracking: {
+    wearToday: 'Porter aujourd\'hui',
+    wornTimes: (count: number) => `Porté ${count} fois`,
+    lastWorn: 'Dernière fois porté',
+    never: 'Jamais',
+    stats: 'Statistiques de port',
+    totalWears: 'Ports totaux',
+    mostWorn: 'Look le plus porté',
   },
 };
 

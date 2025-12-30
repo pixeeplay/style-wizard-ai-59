@@ -3,8 +3,14 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Download, Share2, Star, Copy, Check, Loader2 } from 'lucide-react';
+import { Download, Share2, Star, Check, Loader2, Instagram, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export interface TryOnImages {
   flatlay: string | null;
@@ -37,7 +43,41 @@ export default function TryOnGallery({ images, generating, onSelectPrimary, prim
     link.click();
   };
 
-  const handleShare = async (imageUrl: string, style: string) => {
+  const handleCopyLink = async (imageUrl: string) => {
+    await navigator.clipboard.writeText(imageUrl);
+    toast({
+      title: t.gallery.linkCopied,
+      description: t.gallery.linkCopiedDesc,
+    });
+  };
+
+  const handleShareInstagram = async (imageUrl: string, style: string) => {
+    // Instagram doesn't have a direct web share API, so we download the image
+    // and copy the caption to clipboard for the user to paste
+    const caption = `${t.gallery.instagramCaption} #SmartStyle #OOTD #Fashion #${style}`;
+    
+    try {
+      await navigator.clipboard.writeText(caption);
+      
+      // Download the image for the user
+      handleDownload(imageUrl, style);
+      
+      toast({
+        title: t.gallery.instagramReady,
+        description: t.gallery.instagramReadyDesc,
+      });
+    } catch (error) {
+      console.error('Instagram share error:', error);
+    }
+  };
+
+  const handleSharePinterest = (imageUrl: string, style: string) => {
+    const description = encodeURIComponent(`${t.gallery.pinterestCaption} - ${styleLabels[style as keyof TryOnImages]} #SmartStyle #Fashion`);
+    const pinterestUrl = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(window.location.href)}&media=${encodeURIComponent(imageUrl)}&description=${description}`;
+    window.open(pinterestUrl, '_blank', 'width=750,height=600');
+  };
+
+  const handleNativeShare = async (imageUrl: string, style: string) => {
     try {
       if (navigator.share) {
         await navigator.share({
@@ -46,13 +86,9 @@ export default function TryOnGallery({ images, generating, onSelectPrimary, prim
           url: imageUrl,
         });
       } else {
-        await navigator.clipboard.writeText(imageUrl);
+        await handleCopyLink(imageUrl);
         setCopiedStyle(style);
         setTimeout(() => setCopiedStyle(null), 2000);
-        toast({
-          title: t.gallery.linkCopied,
-          description: t.gallery.linkCopiedDesc,
-        });
       }
     } catch (error) {
       console.error('Share error:', error);
@@ -117,21 +153,41 @@ export default function TryOnGallery({ images, generating, onSelectPrimary, prim
                     >
                       <Download className="w-3 h-3" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleShare(imageUrl, style);
-                      }}
-                    >
-                      {copiedStyle === style ? (
-                        <Check className="w-3 h-3 text-green-500" />
-                      ) : (
-                        <Share2 className="w-3 h-3" />
-                      )}
-                    </Button>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {copiedStyle === style ? (
+                            <Check className="w-3 h-3 text-green-500" />
+                          ) : (
+                            <Share2 className="w-3 h-3" />
+                          )}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenuItem onClick={() => handleShareInstagram(imageUrl, style)}>
+                          <Instagram className="w-4 h-4 mr-2" />
+                          Instagram
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleSharePinterest(imageUrl, style)}>
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          Pinterest
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleNativeShare(imageUrl, style)}>
+                          <Share2 className="w-4 h-4 mr-2" />
+                          {t.gallery.shareOther}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleCopyLink(imageUrl)}>
+                          <Check className="w-4 h-4 mr-2" />
+                          {t.gallery.copyLink}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 )}
               </div>

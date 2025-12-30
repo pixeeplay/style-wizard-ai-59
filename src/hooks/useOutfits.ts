@@ -242,6 +242,58 @@ export function useOutfits() {
     [toast]
   );
 
+  // Mark outfit as worn today
+  const markAsWorn = useCallback(
+    async (outfitId: string) => {
+      const outfit = outfits.find((o) => o.id === outfitId);
+      if (!outfit) return;
+
+      try {
+        const newWearCount = (outfit.wear_count || 0) + 1;
+        const now = new Date().toISOString();
+
+        const { error } = await supabase
+          .from('outfits')
+          .update({ 
+            wear_count: newWearCount,
+            last_worn_at: now 
+          })
+          .eq('id', outfitId);
+
+        if (error) throw error;
+
+        setOutfits((prev) =>
+          prev.map((o) =>
+            o.id === outfitId ? { ...o, wear_count: newWearCount, last_worn_at: now } : o
+          )
+        );
+
+        toast({
+          title: 'Outfit worn!',
+          description: `Worn ${newWearCount} time${newWearCount > 1 ? 's' : ''} total`,
+        });
+      } catch (error) {
+        console.error('Error marking outfit as worn:', error);
+      }
+    },
+    [outfits, toast]
+  );
+
+  // Calculate wear statistics
+  const wearStats = useMemo(() => {
+    const totalWears = outfits.reduce((sum, o) => sum + (o.wear_count || 0), 0);
+    const mostWorn = outfits.reduce((max, o) => 
+      (o.wear_count || 0) > (max?.wear_count || 0) ? o : max, 
+      null as Outfit | null
+    );
+    const recentlyWorn = outfits
+      .filter((o) => o.last_worn_at)
+      .sort((a, b) => new Date(b.last_worn_at!).getTime() - new Date(a.last_worn_at!).getTime())
+      .slice(0, 5);
+    
+    return { totalWears, mostWorn, recentlyWorn };
+  }, [outfits]);
+
   const favoriteOutfits = useMemo(() => outfits.filter((o) => o.is_favorite), [outfits]);
 
   return {
@@ -254,6 +306,8 @@ export function useOutfits() {
     deleteOutfit,
     updateOutfitImages,
     scheduleOutfit,
+    markAsWorn,
+    wearStats,
     refetch: fetchOutfits,
   };
 }
