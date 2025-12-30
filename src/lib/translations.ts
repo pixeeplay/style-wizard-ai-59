@@ -403,12 +403,16 @@ export const translations = {
   // Weekly Planner
   planner: {
     title: 'Weekly Planner',
+    monthlyTitle: 'Monthly Planner',
+    week: 'Week',
+    month: 'Month',
     enterCity: 'Enter city for weather...',
     dropHere: 'Drop',
     more: 'more',
     itemsAvailable: 'items available',
     inLaundry: 'in laundry',
     dragInstruction: 'Drag outfits from history to schedule them',
+    swipeHint: 'Swipe left/right to navigate',
   },
 
   // Laundry Tracker
@@ -422,6 +426,10 @@ export const translations = {
     allClean: 'All items are clean!',
     clean: 'clean',
     reminder: 'Time to do laundry?',
+    smartSuggestions: 'Suggested for washing',
+    wornTimes: (count: number) => `Worn ${count}× since wash`,
+    needsFreshening: 'May need freshening',
+    wash: 'Wash',
   },
 };
 
