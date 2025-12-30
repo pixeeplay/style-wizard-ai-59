@@ -385,6 +385,38 @@ export const translationsFr = {
     totalWears: 'Ports totaux',
     mostWorn: 'Look le plus porté',
   },
+
+  // Analytics
+  analytics: {
+    title: 'Analyse de la garde-robe',
+    noData: 'Ajoutez des articles pour voir les analyses',
+    totalItems: 'Articles',
+    totalWears: 'Ports totaux',
+    uniqueColors: 'Couleurs',
+    mostWorn: 'Plus portés',
+    leastWorn: 'Moins portés',
+    neverWorn: 'Jamais',
+    seasonalDistribution: 'Répartition saisonnière',
+    colorPalette: 'Palette de couleurs',
+    categoryDistribution: 'Catégories',
+  },
+
+  // Recommendations
+  recommendations: {
+    title: 'Suggestions de tenues',
+    subtitle: 'Basées sur les articles que vous n\'avez pas portés récemment',
+    neglected: 'négligés',
+    allWornRecently: 'Bravo ! Tous vos articles ont été portés récemment.',
+    bothNotWorn: 'Les deux pas portés récemment',
+    topNotWorn: 'Haut pas porté récemment',
+    bottomNotWorn: 'Bas pas porté récemment',
+    never: 'Jamais porté',
+    today: 'Aujourd\'hui',
+    yesterday: 'Hier',
+    daysAgo: (days: number) => `Il y a ${days} jours`,
+    weeksAgo: (weeks: number) => `Il y a ${weeks} semaine${weeks > 1 ? 's' : ''}`,
+    monthsAgo: (months: number) => `Il y a ${months} mois`,
+  },
 };
 
 export type TranslationsFr = typeof translationsFr;
