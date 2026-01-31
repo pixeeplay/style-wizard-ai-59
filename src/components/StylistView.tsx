@@ -598,34 +598,23 @@ export default function StylistView() {
             )}
           </div>
 
-        <div className="flex gap-2">
-          <Button
-            onClick={generateVirtualTryOn}
-            className="flex-1 gold-gradient text-primary-foreground"
-            disabled={!outfit.top || !outfit.bottom || generatingTryOn}
-          >
-            {generatingTryOn ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                {t.stylist.generatingImage}
-              </>
-            ) : (
-              <>
-                <Wand2 className="w-4 h-4 mr-2" />
-                {t.stylist.visualize}
-              </>
-            )}
-          </Button>
-          <Button
-            onClick={generateAllStyles}
-            variant="outline"
-            className="gap-2"
-            disabled={!outfit.top || !outfit.bottom || generatingStyles.flatlay || generatingStyles.mannequin || generatingStyles.editorial}
-          >
-            <Images className="w-4 h-4" />
-            <span className="hidden sm:inline">3 styles</span>
-          </Button>
-        </div>
+        <Button
+          onClick={generateAllStyles}
+          className="w-full gold-gradient text-primary-foreground"
+          disabled={!outfit.top || !outfit.bottom || generatingStyles.flatlay || generatingStyles.mannequin || generatingStyles.editorial}
+        >
+          {(generatingStyles.flatlay || generatingStyles.mannequin || generatingStyles.editorial) ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              {t.stylist.generatingImage}
+            </>
+          ) : (
+            <>
+              <Images className="w-4 h-4 mr-2" />
+              {t.stylist.visualize} (3 styles)
+            </>
+          )}
+        </Button>
 
           <div className="flex gap-3">
             <Button
