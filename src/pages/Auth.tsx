@@ -69,7 +69,7 @@ export default function Auth() {
         title: 'Bienvenue !',
         description: 'Connexion réussie',
       });
-      navigate('/');
+      navigate('/app');
     }
   };
 
