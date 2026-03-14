@@ -34,10 +34,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/onboarding" replace />;
   }
 
-  if (!profile?.onboarding_completed === false) {
-    // profile loaded and onboarding done
-  }
-
   return <>{children}</>;
 }
 
